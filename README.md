@@ -15,9 +15,9 @@ uvicorn main:app --reload
 ```
 
 服务启动后，访问：
-- API 文档：http://localhost:8000/docs
-- 替代文档：http://localhost:8000/redoc
-- Hello World 接口：http://localhost:8000/
+- API 文档：http://localhost:8200/docs
+- 替代文档：http://localhost:8200/redoc
+- Hello World 接口：http://localhost:8200/
 
 ## API 接口
 
@@ -62,14 +62,14 @@ uvicorn main:app --reload
 
 ```bash
 # 简单聊天
-curl -X POST "http://localhost:8000/api/gemini/chat" \
+curl -X POST "http://localhost:8200/api/gemini/chat" \
   -H "Content-Type: application/json" \
   -d '{
     "message": "你好，请介绍一下你自己"
   }'
 
 # 指定模型和参数
-curl -X POST "http://localhost:8000/api/gemini/chat" \
+curl -X POST "http://localhost:8200/api/gemini/chat" \
   -H "Content-Type: application/json" \
   -d '{
     "message": "解释一下量子计算",
@@ -78,13 +78,13 @@ curl -X POST "http://localhost:8000/api/gemini/chat" \
   }'
 
 # 检查 gemini-cli 状态
-curl "http://localhost:8000/api/gemini/health"
+curl "http://localhost:8200/api/gemini/health"
 
 # 查看可用的 MCP 服务器
-curl "http://localhost:8000/api/gemini/mcp-servers"
+curl "http://localhost:8200/api/gemini/mcp-servers"
 
 # 使用 MCP 服务器进行聊天
-curl -X POST "http://localhost:8000/api/gemini/chat" \
+curl -X POST "http://localhost:8200/api/gemini/chat" \
   -H "Content-Type: application/json" \
   -d '{
     "message": "使用 JIRA MCP 查询任务",
@@ -99,7 +99,7 @@ import requests
 
 # 发送消息
 response = requests.post(
-    "http://localhost:8000/api/gemini/chat",
+    "http://localhost:8200/api/gemini/chat",
     json={
         "message": "你好",
         "model": "gemini-pro"
