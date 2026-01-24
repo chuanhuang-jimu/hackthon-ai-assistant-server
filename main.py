@@ -21,7 +21,7 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     """聊天请求模型"""
-    mock: Optional[bool] = False
+    mock: Optional[bool] = True
     jira_id: Optional[str] = None
     message: Optional[str] = ''
     prompt_key: Optional[str] = 'default'
@@ -207,10 +207,9 @@ async def story_check(request: ChatRequest):
     ## 第一步：单次全量获取 (Single Shot)
     执行且仅执行一次 `jira_search`。
     * **JQL**: `parent = {{STORY_KEY}} OR key = {{STORY_KEY}}`
-        * *逻辑说明*：这会同时拉取父 Story 本身以及它下面所有的 Sub-tasks。
-    * **Fields**: `summary, status, priority, issuetype, assignee, comment, worklog, updated, created`
-        * *注意*：直接使用返回 JSON 中的嵌套 `comment` 和 `worklog` 结构。
-    * **Limit**: `100` (通常足以覆盖一个 Story 的范围)
+    * **Fields**: `summary, status, priority, issuetype, assignee, comment, worklog, updated, created, resolution`
+        * *说明*：严格请求标准字段 `issuetype` 以确定任务类型，请求 `resolution` 以辅助判断完成情况。
+    * **Limit**: `100`
     
     ## 第二步：时间窗口锁定
     获取当前日期，计算出以下两个绝对日期用于筛选：
@@ -223,21 +222,22 @@ async def story_check(request: ChatRequest):
     
     1.  **宏观分析 (Story 视角)**
         * 统计子任务状态 (Todo/In Progress/Done)。
-        * **风险识别**：检查是否有未关闭的 "Story Defect" 类型任务，或 High/Critical 优先级的未完成任务。
+        * **风险识别**：基于 `issuetype` 检查是否有未关闭的 Defect/Bug，或 High/Critical 优先级的未完成任务。
         * **最新结论**：提取父 Story 以及 子任务中最近24H评论，综合生成当前story的进展摘要。
     
     2.  **微观分析 (人员视角)**
         * 初始化 `Activity_Log`。
-        * 遍历列表中的每一个 Issue，执行**类型映射**：
-            * 若 `issuetype` 为 'Story Defect' -> 标记为 `defect`
-            * 若 `issuetype` 为其他任何类型 -> 标记为 `task`
+        * 遍历列表中的每一个 Issue，执行**类型严格映射**（不猜测，严格依赖字段）：
+            * **检查 `fields.issuetype.name`**：
+                * 若包含 'Defect'、'Bug' 或 'Story Defect' -> 标记为 `defect`
+                * 其他情况 -> 标记为 `task`
         * 遍历 Comment 和 Worklog：
             * 检查 `fields.comment.comments` 数组：若时间匹配，提取 {人, 具体日期(yyyy-MM-dd), Issue Key, Issue Summary, 内容, 映射后的类型}。
             * 检查 `fields.worklog.worklogs` 数组：若时间匹配，提取 {人, 具体日期(yyyy-MM-dd), Issue Key, Issue Summary, 耗时, 内容, 映射后的类型}。
         * **数据聚合逻辑**：
             1. 先按 **[成员姓名]** 进行一级分组。
             2. 在每个成员下，按 **[Issue Key]** 进行二级分组。
-            3. 对同一 Issue 下的记录，按 **[日期]** 升序排列（从前天到昨天），以便直观展示进展变化。
+            3. 对同一 Issue 下的记录，按 **[日期]** 升序排列（从前天到昨天）。
     
     # Output Format (Markdown)
     
@@ -289,7 +289,7 @@ async def story_check(request: ChatRequest):
         if request.mock:
             result = {
                 "success": True,
-                "response": "## 🚁 ORI-114277 整体进展综述\n> **当前状态**: QA In Progress | **整体进度**: 4/11\n> **风险提示**: 无风险\n\n**📝 最新情况摘要**:\nStory 已于 2026-01-22 进入 QA 测试阶段。目前 11 个子任务中，4 个已完成，4 个正在进行中，3 个尚未开始。过去两天内，开发人员 Garry Peng 和 Chuan Huang 持续投入，主要围绕几个`In Progress`状态的子任务进行开发和沟通。\n\n---\n\n## 👥 团队成员详细动态 (过去两天)\n\n### 👤 Garry Peng\n| 日期 | 任务 (Key - Summary) | 类型 | 投入/内容详情 |\n| :--- | :--- | :--- | :--- |\n| **2026-01-23** | **ORI-136183** 【admin】 longtext 字段为文本类型时，配置字段影响关系页面，在关联字段配置固定值处输入带标签的内容，在预览页面会变成富文本的样式 | 🔵 task | **[Worklog 1h]** |\n| **2026-01-23** | **ORI-136135** 【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 | 🔵 task | **[Worklog 1h]** |\n| **2026-01-22** | **ORI-136135** 【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 | 🔵 task | **[Worklog 30m]** <br>**[Comment]** /admin-api/object/\\{object_id}/page-layout/\\{layout_id}/ 接口返回的 all_fields 中的字段也需要带上 text_type [~chuan.huang@veeva.com] |\n| **2026-01-22** | **ORI-136130** 【online】 控制字段将longtext 字段 带入值后，再将控制字段的值清空，longtext 字段的值未清空 | 🔵 task | **[Worklog 1h 30m]** |\n\n### 👤 Chuan Huang\n| 日期 | 任务 (Key - Summary) | 类型 | 投入/内容详情 |\n| :--- | :--- | :--- | :--- |\n| **2026-01-23** | **ORI-136135** 【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 | 🔵 task | **[Comment]** [~garry.peng@veeva.com] feature/ORI-136135/admin-affect-others-support-long-text 上面分支加上了 |\n\n### 👤 Zijie Tang\n| 日期 | 任务 (Key - Summary) | 类型 | 投入/内容详情 |\n| :--- | :--- | :--- | :--- |\n| **2026-01-22** | **ORI-136130** 【online】 控制字段将longtext 字段 带入值后，再将控制字段的值清空，longtext 字段的值未清空 | 🔵 task | **[Comment]** wechat 端同样存在这个问题 |\n\n---\n*注：报表生成时间 2026-01-24*",
+                "response": "## 🚁 ORI-114277 整体进展综述\n> **当前状态**: QA In Progress | **整体进度**: 5/11\n> **风险提示**: 🔴 有 2 个高优先级缺陷未修复 (ORI-136130, ORI-136084)\n\n**📝 最新情况摘要**:\n在过去两天，Garry Peng 对 ORI-136183、ORI-136135 和 ORI-136130 提交了工时，并对 ORI-136135 进行了评论。Chuan Huang 报告 ORI-136135 的相关分支已合并。Zijie Tang 就 ORI-136130 评论了微信端也存在类似问题。\n\n---\n\n## 👥 团队成员详细动态 (过去两天)\n\n### 👤 Garry Peng\n\n#### 🔹 ORI-136183 【admin】 longtext 字段为文本类型时，配置字段影响关系页面，在关联字段配置固定值处输入带标签的内容，在预览页面会变成富文本的样式 (🔴 defect)\n*   **[2026-01-23]**:\n    *   **[Worklog 1h]**\n\n#### 🔹 ORI-136135 【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (🔴 defect)\n*   **[2026-01-22]**:\n    *   **[Worklog 30m]**\n    *   **[Comment]** /admin-api/object/{object_id}/page-layout/{layout_id}/ 接口返回的 all_fields 中的字段也需要带上 text_type [~chuan.huang@veeva.com]\n*   **[2026-01-23]**:\n    *   **[Worklog 1h]**\n\n#### 🔹 ORI-136130 【online】 控制字段将longtext 字段 带入值后，再将控制字段的值清空，longtext 字段的值未清空 (🔴 defect)\n*   **[2026-01-22]**:\n    *   **[Worklog 1h 30m]**\n\n### 👤 Chuan Huang\n\n#### 🔹 ORI-136135 【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (🔴 defect)\n*   **[2026-01-23]**:\n    *   **[Comment]** [~garry.peng@veeva.com] feature/ORI-136135/admin-affect-others-support-long-text 上面分支加上了\n\n### 👤 Zijie Tang\n\n#### 🔹 ORI-136130 【online】 控制字段将longtext 字段 带入值后，再将控制字段的值清空，longtext 字段的值未清空 (🔴 defect)\n*   **[2026-01-22]**:\n    *   **[Comment]** wechat 端同样存在这个问题\n\n---\n*注：报表生成时间 2026-01-24*",
                 "error": None,
                 "logs": "YOLO mode is enabled. All tool calls will be automatically approved.\nLoaded cached credentials.\nServer 'jira' supports tool updates. Listening for changes..."
             }
