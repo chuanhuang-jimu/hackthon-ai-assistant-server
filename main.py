@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 
-from analyze_data_storage import parse_to_json
+from analyze_data_storage import parse_to_json, get_story_description
 from gemini_client import gemini_client
 from gemini_session_simple import get_session
 
@@ -43,10 +43,9 @@ class ChatResponse(BaseModel):
     logs: Optional[str] = None  # 信息性日志（非错误）
 
 
-@app.get("/")
-async def hello_world():
-    """Hello World 接口"""
-    return {"message": "Hello World"}
+@app.get("/story/description")
+async def story_description(sprint_name, story_id):
+    return get_story_description(sprint_name, story_id)
 
 
 @app.get("/hello")

@@ -1,0 +1,58 @@
+[
+  {
+    "User": "Garry Peng",
+    "Jira_ID": "ORI-136130",
+    "Jira_Title": "【online】 控制字段将longtext 字段 带入值后，再将控制字段的值清空，longtext 字段未清空 (🔴 defect)",
+    "Date": "2026-01-22",
+    "Content": "**[Worklog 1h 30m]**",
+    "Comment": ""
+  },
+  {
+    "User": "Zijie Tang",
+    "Jira_ID": "ORI-136130",
+    "Jira_Title": "【online】 控制字段将longtext 字段 带入值后，再将控制字段的值清空，longtext 字段未清空 (🔴 defect)",
+    "Date": "2026-01-22",
+    "Content": "**[Comment]**",
+    "Comment": "wechat 端同样存在这个问题"
+  },
+  {
+    "User": "Garry Peng",
+    "Jira_ID": "ORI-136135",
+    "Jira_Title": "【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (🔴 defect)",
+    "Date": "2026-01-22",
+    "Content": "**[Comment]**",
+    "Comment": "/admin-api/object/\\{object_id}/page-layout/\\{layout_id}/ 接口返回的 all_fields 中的字段也需要带上 text_type [~chuan.huang@veeva.com]"
+  },
+  {
+    "User": "Garry Peng",
+    "Jira_ID": "ORI-136135",
+    "Jira_Title": "【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (🔴 defect)",
+    "Date": "2026-01-22",
+    "Content": "**[Worklog 30m]**",
+    "Comment": ""
+  },
+  {
+    "User": "Garry Peng",
+    "Jira_ID": "ORI-136135",
+    "Jira_Title": "【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (🔴 defect)",
+    "Date": "2026-01-23",
+    "Content": "**[Worklog 1h]**",
+    "Comment": ""
+  },
+  {
+    "User": "Chuan Huang",
+    "Jira_ID": "ORI-136135",
+    "Jira_Title": "【admin】longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (🔴 defect)",
+    "Date": "2026-01-23",
+    "Content": "**[Comment]**",
+    "Comment": "[~garry.peng@veeva.com] feature/ORI-136135/admin-affect-others-support-long-text"
+  },
+  {
+    "User": "Garry Peng",
+    "Jira_ID": "ORI-136183",
+    "Jira_Title": "【admin】 longtext 字段为文本类型时，配置字段影响关系页面，在关联字段配置固定值处输入带标签的内容，在预览页面会变成富文本的样式 (🔴 defect)",
+    "Date": "2026-01-23",
+    "Content": "**[Worklog 1h]**",
+    "Comment": ""
+  }
+]

@@ -129,6 +129,22 @@ def parse_to_json(text, story_id):
     return final_data
 
 
+def get_story_description(sprint_name, story_id):
+    base_dir = "/Users/ChuanHuang/Desktop/project/hackathon-personal-assistant/analyze_data"
+    sprint_path = os.path.join(base_dir, sprint_name)
+    if not os.path.isdir(sprint_path):
+        return {"error": "sprint未完成分析"}
+
+    story_file_path = os.path.join(sprint_path, f"{story_id}.json")
+    if not os.path.isfile(story_file_path):
+        return {"error": "story未完成分析"}
+
+    with open(story_file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    return data
+
+
 # --- 测试调用 ---
 if __name__ == "__main__":
     try:
@@ -139,5 +155,16 @@ if __name__ == "__main__":
             print(json.dumps(result[:1], indent=2, ensure_ascii=False))
         else:
             print("警告: 结果为空，请检查 Regex 匹配逻辑。")
+        
+        print("\n--- Testing story_description ---")
+        story_data = story_description("Plum 25R3.2 Sprint 2", "ORI-114277")
+        print(json.dumps(story_data, indent=2, ensure_ascii=False))
+
+        story_data_not_found = story_description("Plum 25R3.2 Sprint 2", "ORI-000000")
+        print(json.dumps(story_data_not_found, indent=2, ensure_ascii=False))
+
+        sprint_not_found = story_description("Unknown Sprint", "ORI-114277")
+        print(json.dumps(sprint_not_found, indent=2, ensure_ascii=False))
+
     except Exception as e:
         print(f"\n执行过程中遇到错误: {e}")
