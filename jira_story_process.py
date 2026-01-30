@@ -76,12 +76,20 @@ async def story_list(request: ChatRequest):
 
     最后，请不要输出任何多余的分析文字，直接返回一个 JSON 数组，格式严格遵守如下定义：
     [
-      {
-        "key": "Issue ID (例如 ORI-123)",
-        "summary": "story的标题",
-        "status": "当前状态",
-        "tags": ['delay', 'risk'] 
-      }
+        {
+            "key": "Issue ID (例如 ORI-123)",
+            "summary": "story的标题",
+            "status": "当前状态",
+            "tags": {
+                "delay": [
+                    "风险x(x为命中规则对应的下标+1)",
+                    "风险x(x为命中规则对应的下标+1)"
+                ],
+                "risk": [
+                    "风险x(x为命中规则对应的下标+1)"
+                ]
+            }
+        }
     ]
     """
 
@@ -96,8 +104,8 @@ async def story_list(request: ChatRequest):
         if request.mock:
             result = {
                 "success": True,
-                "response": "```json\n[\n  {\n    \"key\": \"ORI-114277\",\n    \"summary\": \"affect other 界面化补齐 longtext 类型字段 （1.19提测）✅\",\n    \"status\": \"Development Complete\"\n  },\n  {\n    \"key\": \"ORI-132922\",\n    \"summary\": \"【BR V2】BR v2 提示信息 on-tab（1.14）\",\n    \"status\": \"Development in Progress\"\n  }\n]\n```",
-                "error": "",
+                "response": "```json\n[\n    {\n        \"key\": \"ORI-135482\",\n        \"summary\": \"【调研】在BR V2 中，支持数据更新\",\n        \"status\": \"Open\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-120625\",\n        \"summary\": \"调研 Python、Django 升级\",\n        \"status\": \"Open\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-135977\",\n        \"summary\": \"列表页/related list的multi_lookup/multi-select_picklist字段支持filter_by_list_data（ 2.5 提测 ）\",\n        \"status\": \"Development in Progress\",\n        \"tags\": {\n            \"delay\": [\n                \"风险1\"\n            ],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-134586\",\n        \"summary\": \"【调研】 Hardcode PageList 重写get_record_value 导致「有数据项」过滤项不准的问题\",\n        \"status\": \"Development in Progress\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": []\n        }\n    },\n    {\n        \"key\": \"ORI-133951\",\n        \"summary\": \"【实现2】详情页中lookup字段迁移rls_config - 开启use_rls_config 开关 （1.14 提测）\",\n        \"status\": \"Development in Progress\",\n        \"tags\": {\n            \"delay\": [\n                \"风险1\"\n            ],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-132922\",\n        \"summary\": \"【BR V2】BR v2 提示信息 on-tab（2.11）\",\n        \"status\": \"Development in Progress\",\n        \"tags\": {\n            \"delay\": [\n                \"风险1\"\n            ],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-131672\",\n        \"summary\": \"标准列表页/related list支持为空/不为空/属于（in）/不属于（not in）的筛选（2.5 提测）\",\n        \"status\": \"Development in Progress\",\n        \"tags\": {\n            \"delay\": [\n                \"风险1\"\n            ],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-135104\",\n        \"summary\": \"pagelayout field 中 metadata reference 字段可以设置configuration （metadata reference conditions）✅\",\n        \"status\": \"QA In Progress\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": []\n        }\n    },\n    {\n        \"key\": \"ORI-132930\",\n        \"summary\": \"【实现】支持refer lookup字段，并且列表筛选可以按照原生lookup来筛选（1.23 提测✅）\",\n        \"status\": \"QA In Progress\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-132921\",\n        \"summary\": \"【BR V2】关闭新建 V1 BR 的入口（1.19提测）✅\",\n        \"status\": \"QA In Progress\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": [\n                \"风险3\"\n            ]\n        }\n    },\n    {\n        \"key\": \"ORI-132920\",\n        \"summary\": \"【BR V2】BR V2 兼容 Check Point（01.13 提测）✅\",\n        \"status\": \"Closed\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": []\n        }\n    },\n    {\n        \"key\": \"ORI-118140\",\n        \"summary\": \"【调研】调用 field.configuration的地方，都可以支持由page_list_field/page_layout_field.configuration覆盖object_field.configuration\",\n        \"status\": \"Closed\",\n        \"tags\": {\n            \"delay\": [\n                \"风险2\"\n            ],\n            \"risk\": []\n        }\n    },\n    {\n        \"key\": \"ORI-114277\",\n        \"summary\": \"affect other 界面化补齐 longtext 类型字段 （1.19提测）✅\",\n        \"status\": \"Closed\",\n        \"tags\": {\n            \"delay\": [],\n            \"risk\": []\n        }\n    }\n]\n```",
+                "error": None,
                 "logs": "YOLO mode is enabled. All tool calls will be automatically approved.\nLoaded cached credentials.\nServer 'jira' supports tool updates. Listening for changes..."
             }
 
