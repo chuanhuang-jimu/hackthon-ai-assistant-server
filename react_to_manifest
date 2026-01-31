@@ -1,0 +1,60 @@
+@Codebase 我现在的项目是一个 React web 应用。请帮我把它重构为一个原生的 Chrome Extension (Manifest V3)。
+
+不要使用 React、Vite、TypeScript 或 npm 构建过程。我希望它是纯粹的 HTML, CSS 和 Vanilla JavaScript。
+
+请根据 App.tsx 和 components 里的界面逻辑，重新编写 popup.html, popup.css, 和 popup.js。
+
+确保根目录下有一个正确的 manifest.json，指向这些新文件。
+
+删除所有不需要的 React 配置文件（如 vite.config.ts, package.json, tsconfig.json, src 目录等），只保留插件运行必须的文件。
+
+确保界面样式和我现在的 React 版本保持一致。
+
+预期结果： Cursor 会列出它要删除的文件和要创建的新文件。点击 "Accept All" (全部接受)，你的文件夹就会瞬间变得很干净，只剩下可以直接加载进 Chrome 的 3-4 个文件
+
+
+
+
+
+
+
+# Role
+你是一位精通前端开发和 Chrome 扩展程序架构的专家，特别擅长将 React 项目迁移至 Chrome Extension (Manifest V3) 环境。
+
+# Context
+我目前有一个现成的 React 前端工程。
+- 构建工具: [例如: Vite / Create React App (Webpack) / Rsbuild]
+- 路由库: [例如: React Router v6]
+- 样式库: [例如: Tailwind CSS / Styled Components / CSS Modules]
+- 当前功能简述: [例如: 一个待办事项管理列表，包含数据可视化面板]
+
+# Goal
+请指导我将这个 React 工程转换为一个可以在 Chrome 浏览器中直接加载的插件（Unpacked Extension）。
+
+# Requirements
+请分步骤提供以下指导，并给出关键代码：
+
+1. **Manifest V3 配置**:
+   - 请提供一份标准的 `manifest.json` 文件。
+   - 假设我的 React App 主要将作为插件的 [Popup 弹窗 / Sidepanel 侧边栏 / New Tab 新标签页] 运行。
+   - 如果需要配置 Content Script 或 Background Service Worker，请一并说明。
+
+2. **路由调整 (Crucial)**:
+   - Chrome 插件不支持普通的 `BrowserRouter` (History API)。请指导我如何修改为 `HashRouter` 或 `MemoryRouter` 以确保页面正常跳转。
+
+3. **构建配置修改**:
+   - 如何修改构建脚本（vite.config.js 或 webpack config），以便生成适合插件加载的静态文件结构？
+   - (如果是多入口) 如果我同时需要 Popup 和 Options 页面，如何配置多入口打包？
+
+4. **资源引用**:
+   - 处理图片和字体等静态资源的路径问题（避免出现 `chrome-extension://` 路径错误）。
+
+5. **调试与加载**:
+   - 构建完成后，如何在 Chrome 的 `chrome://extensions` 页面中加载这个项目。
+
+# Constraints
+- 必须使用 Manifest V3 标准。
+- 保持尽可能少的代码侵入，复用现有组件。
+- 给出清晰的代码 Diff 或完整文件示例。
+
+你直接帮我操作，然后在桌面上生成一个新的可直接导入chrome的文件夹
