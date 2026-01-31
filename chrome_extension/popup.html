@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工作助手·Pro</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="header-text">
+          <h1>工作助手·Pro</h1>
+          <span>Smart Workspace Assistant</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          在线
+        </div>
+        <button class="settings-btn" title="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="tab-nav">
+      <button id="tab-morning" class="tab-btn active" data-target="morning-content">
+        <i class="fa-solid fa-sun"></i>
+        晨间速览
+      </button>
+      <button id="tab-summary" class="tab-btn" data-target="summary-content">
+        <i class="fa-solid fa-calendar-check"></i>
+        今日总结
+      </button>
+      <button id="tab-genie" class="tab-btn" data-target="genie-content">
+        <i class="fa-solid fa-wand-sparkles"></i>
+        会议精灵
+      </button>
+    </div>
+
+    <main class="main-content">
+      <div class="content-wrapper">
+        <!-- Morning Brief -->
+        <div id="morning-content" class="tab-content active">
+          <div class="space-y-6">
+            <div class="card">
+              <div class="card-header-orange">
+                <i class="fa-solid fa-cloud-sun"></i>
+                <h2>今日日程分析</h2>
+              </div>
+              <div class="analysis-container">
+                <textarea id="analysis-textarea" class="analysis-textarea" readonly></textarea>
+                <div id="analysis-loading" class="loading-spinner">
+                  <i class="fa-solid fa-spinner fa-spin"></i>
+                </div>
+              </div>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <p class="stat-label">待办事项</p>
+                <p class="stat-value stat-blue">5</p>
+              </div>
+              <div class="stat-card">
+                <p class="stat-label">待参加会议</p>
+                <p class="stat-value stat-purple">2</p>
+              </div>
+              <div class="stat-card">
+                <p class="stat-label">紧急待处理</p>
+                <p class="stat-value stat-red">1</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Summary -->
+        <div id="summary-content" class="tab-content">
+          <div class="space-y-6">
+            <div class="summary-header">
+              <p>整理今日产出，高效同步进度</p>
+              <button id="fetch-tasks-btn" class="fetch-btn">
+                <i class="fa-solid fa-rotate"></i>
+                获取最新信息
+              </button>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Jira 号</th>
+                    <th>任务标题</th>
+                    <th>今日工时</th>
+                    <th>备注</th>
+                  </tr>
+                </thead>
+                <tbody id="tasks-tbody">
+                  <tr>
+                    <td colspan="4" class="empty-state">
+                      点击上方按钮获取今日进行中的任务
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="submit-summary-container" class="submit-container hidden">
+              <button class="submit-btn">确认提交今日工作总结</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Meeting Genie -->
+        <div id="genie-content" class="tab-content">
+          <div class="genie-placeholder">
+            <div class="genie-icon">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <div class="genie-text">
+              <h3>会议精灵</h3>
+              <p>即将到来：智能录音、实时会议摘要与待办提取</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

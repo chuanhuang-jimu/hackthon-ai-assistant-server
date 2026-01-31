@@ -82,8 +82,8 @@ def parse_to_json(text, story_id):
     # 2. Redis 操作逻辑
     # ---------------------------------------------------------
 
-    # 构造 Redis Key, 格式: sprint:{sprint_id}:story:{story_id}
-    redis_key = f"sprint:{sprint_id}:story:{story_id}"
+    # 构造 Redis Key, 格式: story:personal_progress:{story_id}
+    redis_key = f"story:personal_progress:{story_id}"
 
     # 从 Redis 读取现有数据
     existing_data = query_redis('GET', redis_key)
@@ -112,12 +112,26 @@ def parse_to_json(text, story_id):
     return final_data
 
 
-def get_story_description(sprint_name, story_id):
-    redis_key = f"sprint:{sprint_name}:story:{story_id}"
-    data = query_redis('GET', redis_key)
-    if not data:
-        return {"error": f"在 Redis 中未找到 sprint '{sprint_name}' 或 story '{story_id}' 的分析数据。"}
-    return data
+def get_story_description(story_id):
+    # 1. Get personal progress data
+    personal_progress_key = f"story:personal_progress:{story_id}"
+    personal_process_data = query_redis('GET', personal_progress_key)
+
+    # 2. Get tags data
+    tags_key = f"story:tags:{story_id}"
+    tags_data = query_redis('GET', tags_key)
+
+    # If both are missing, return an error
+    if not personal_process_data and not tags_data:
+        return {"error": f"在 Redis 中未找到 story '{story_id}' 的任何相关数据（进度或标签）。"}
+
+    # 3. Combine into the final dictionary
+    result = {
+        "tags": tags_data if tags_data else [],
+        "personal_process_data": personal_process_data if personal_process_data else []
+    }
+
+    return result
 
 
 # --- 测试调用 ---
