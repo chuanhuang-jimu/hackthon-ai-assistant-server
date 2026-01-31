@@ -5,6 +5,7 @@ from typing import Optional, List
 class ChatRequest(BaseModel):
     """聊天请求模型"""
     mock: Optional[bool] = True
+    user_email: Optional[str] = "chuan.huang@veeva.com"
     jira_id: Optional[str] = None
     message: Optional[str] = ''
     prompt_key: Optional[str] = 'default'

@@ -18,6 +18,90 @@ async def story_description(story_id):
     return get_story_description(story_id)
 
 
+
+@router.post("/api/gemini/board/personal/task/processing", response_model=ChatResponse)
+async def personal_task_processing(request: ChatRequest):
+    get_personal_tasks_prompt = """
+    请按照以下步骤执行：
+    step1: 获取看板[3485]状态为 'active' 的 sprint_id。
+    step2: 使用 jira_search (jira MCP Server) 获取当前sprint下，用户名为 '{{USER_EMAIL}}' 的正在进行中的task和defect。
+    step3: 检查每个正在进行中的任务，获取已log时间和剩余时间，并检查是否有当天的work_log及其备注。
+    step4: 最后，请不要输出任何多余的分析文字，直接返回一个 JSON 数组，格式严格遵守如下定义：
+    [
+        {
+            "jira_id": "ORI-XXX",
+            "sumamry": "任务标题",
+            "today_work_hours": "今日log工时",
+            "comment": "进度备注",
+            "logged": "已log时间",
+            "remaining": "剩余时间"
+        }
+    ]
+    """
+    prompt = get_personal_tasks_prompt.replace("{{USER_EMAIL}}", request.user_email)
+
+    try:
+        if request.mock:
+            # Mock response for testing
+            mock_response = [
+                {
+                    "jira_id": "ORI-12345",
+                    "sumamry": "这是一个测试任务",
+                    "today_work_hours": "2h",
+                    "comment": "完成了大部分功能",
+                    "logged": "4h",
+                    "remaining": "1d"
+                }
+            ]
+            return ChatResponse(
+                success=True,
+                response=json.dumps(mock_response, indent=4),
+                error=None,
+                logs="Mock response returned."
+            )
+
+        kwargs = {
+            "approval_mode": "yolo"
+        }
+        result = gemini_client.chat(
+            prompt,
+            model=request.model,
+            mcp_servers=['jira'],
+            **kwargs
+        )
+
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Unknown error occurred during gemini chat")
+            )
+
+        response_content = result.get('response', '')
+        # Extract JSON from the response
+        if '```json' in response_content:
+            json_str = response_content.split('```json')[1].split('```')[0].strip()
+        else:
+            json_str = response_content
+
+        try:
+            # Validate if it's a valid JSON
+            json.loads(json_str)
+            final_response = json_str
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="Failed to parse JSON from response")
+
+        return ChatResponse(
+            success=True,
+            response=final_response,
+            error=result.get("error"),
+            logs=result.get("logs")
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 @router.post("/api/gemini/board/story/list", response_model=ChatResponse)
 async def story_list(request: ChatRequest):
     """
