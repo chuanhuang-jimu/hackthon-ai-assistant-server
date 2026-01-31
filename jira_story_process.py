@@ -4,7 +4,7 @@ from models import ChatResponse, ChatRequest
 from fastapi import HTTPException, APIRouter
 from analyze_data_storage import parse_to_json, get_story_description
 from gemini_client import gemini_client
-import requests
+from redis_utils import query_redis, set_redis
 import json
 
 router = APIRouter()
@@ -18,39 +18,10 @@ async def story_description(sprint_name, story_id):
     return get_story_description(sprint_name, story_id)
 
 
-def query_redis(method: str, key: str) -> dict:
-    url = f"http://localhost:7379/{method}/{key}"
-    data = {}
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        raw_json_string = response.json().get(method)
-        if raw_json_string and isinstance(raw_json_string, str):
-            data = json.loads(raw_json_string)
-    except Exception as e:
-        pass
-    return data
-
-def set_redis(key: str, value, expiry_seconds: int = None) -> None:
-    if not isinstance(value, str):
-        value = json.dumps(value)
-
-    if expiry_seconds:
-        url = f"http://localhost:7379/SETEX/{key}/{expiry_seconds}/{value}"
-    else:
-        url = f"http://localhost:7379/SET/{key}/{value}"
-
-    try:
-        response = requests.put(url)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"Error setting redis key '{key}': {e}")
-
-
 @router.post("/api/gemini/board/story/list", response_model=ChatResponse)
 async def story_list(request: ChatRequest):
     """
-    查看看板下当前sprint正在进行的story
+    查看看板下当前sprint正在进行的story，并打上风险标记
     """
     # 规则获取
     delay_rules = []
@@ -168,8 +139,7 @@ async def story_list(request: ChatRequest):
 @router.post("/api/gemini/story/check", response_model=ChatResponse)
 async def story_check(request: ChatRequest):
     """
-    与 gemini-cli 交互的接口 (Jira Story Check 专用)
-    固定使用 jira mcp server 并在 yolo 模式下运行
+    story风险分析，并记录追踪分析当前story下所有sub-task的最近两日工作进展
     """
 
     jira_story_check = """
@@ -271,8 +241,8 @@ async def story_check(request: ChatRequest):
 
     jira_story_check = jira_story_check.replace("{{STORY_KEY}}", request.jira_id)
     jira_story_check = jira_story_check.replace("{{CURRENT_DATE}}", datetime.datetime.now().strftime("%Y-%m-%d"))
+
     try:
-        # 1. Mock 模式处理
         if request.mock:
             result = {
                 "success": True,
@@ -281,7 +251,6 @@ async def story_check(request: ChatRequest):
                 "logs": "YOLO mode is enabled. All tool calls will be automatically approved.\nLoaded cached credentials.\nServer 'jira' supports tool updates. Listening for changes..."
             }
 
-        # 2. 真实调用逻辑
         else:
             # 强制指定参数：使用 jira server，开启 yolo 模式
             kwargs = {
@@ -294,15 +263,11 @@ async def story_check(request: ChatRequest):
                 mcp_servers=['jira'],  # 这里的逻辑是写死的，如你所愿
                 **kwargs
             )
-
-        # 3. 错误处理
         if not result["success"]:
             raise HTTPException(
                 status_code=500,
                 detail=result.get("error", "Unknown error occurred")
             )
-
-        # 4. 返回结果
         print(f">>> story_check, {request.jira_id}, {result['response']}")
 
         parse_to_json(result['response'], request.jira_id)
