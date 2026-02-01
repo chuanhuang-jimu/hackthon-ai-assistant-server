@@ -70,3 +70,10 @@
     2.  **配置文件**: 提供所有新建或修改过的配置文件 (`manifest.json`, `vite.config.ts`, `tailwind.config.js`, `postcss.config.js`) 的最终完整代码。
     3.  **核心源代码**: 提供所有新建或修改过的 `src` 目录下的文件 (`main.tsx`, `index.css` 等) 的最终完整代码。
     4.  **最终指示**: 提供 `npm run dev` 命令以及如何在 Chrome 中加载 `dist` 目录的简要说明。
+
+
+
+
+开发阶段 (npm run dev)： 是的，为了实现 热更新 (HMR)，你需要启动 Vite 的开发服务。Chrome 插件会连接到这个本地服务，让你修改代码后插件界面能实时刷新，无需手动重载。
+
+生产/发布阶段 (npm run build)： 运行构建命令后，Vite 会将 React 代码打包成静态的 HTML/CSS/JS 文件（通常在 dist 目录）。这个文件夹就是插件本身。 你将这个文件夹加载到 Chrome 中，或者打包成 .crx 发布，它是完全独立的，不再依赖任何本地服务。
