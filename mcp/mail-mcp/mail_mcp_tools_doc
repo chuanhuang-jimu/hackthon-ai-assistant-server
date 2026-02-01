@@ -1,0 +1,61 @@
+🔧 工具名称: list_mailboxes
+📝 描述: 列出 Gmail 中所有的文件夹/标签名称。
+Arguments (Schema):
+{
+  "properties": {},
+  "title": "list_mailboxesArguments",
+  "type": "object"
+}
+------------------------------------------------------------
+🔧 工具名称: read_emails_by_category
+📝 描述:
+    根据预设分类读取邮件。
+
+    Args:
+        category: 类别，支持 'jira', 'gitlab', 'calendar', 'unread', 'all'。
+        limit: 返回数量 (默认: 5)，如果 only_today 为 True，此参数将被忽略。
+        only_today: 是否只读取今天收到的所有邮件 (默认: False)。
+                    如果设为 True，会忽略 limit 限制，返回当天的全部邮件。
+
+Arguments (Schema):
+{
+  "properties": {
+    "category": {
+      "default": "jira",
+      "title": "Category",
+      "type": "string"
+    },
+    "limit": {
+      "default": 5,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "only_today": {
+      "default": false,
+      "title": "Only Today",
+      "type": "boolean"
+    }
+  },
+  "title": "read_emails_by_categoryArguments",
+  "type": "object"
+}
+------------------------------------------------------------
+🔧 工具名称: mark_email_as_read
+📝 描述: 将指定的邮件标记为已读 (Seen)。
+Arguments (Schema):
+{
+  "properties": {
+    "email_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Email Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "email_ids"
+  ],
+  "title": "mark_email_as_readArguments",
+  "type": "object"
+}

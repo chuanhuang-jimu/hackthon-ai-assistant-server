@@ -1,0 +1,302 @@
+{
+  "ai_summary": "周日好！自上周五以来，共有 11 项高优先级动态，其中 Jira 上有 3 项提及或分配，GitLab 有 7 项 Code Review 相关通知，Wiki 上有 1 项 @提及。此外还有一些Jira任务的状态更新和Confluence页面编辑的通知。",
+  "items": [
+    {
+      "id": "10447",
+      "title": "[Confluence] Veeva Orion > Plum Retro 2026-01-16",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 17:50",
+      "source_label": "Wiki",
+      "icon_type": "email"
+    },
+    {
+      "id": "10446",
+      "title": "[Confluence] Veeva Orion > 2026 Release Impact Management",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 17:38",
+      "source_label": "Wiki",
+      "icon_type": "email"
+    },
+    {
+      "id": "10445",
+      "title": "[Confluence] Veeva Orion > 2026 Release Impact Management",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 17:26",
+      "source_label": "Wiki",
+      "icon_type": "email"
+    },
+    {
+      "id": "10444",
+      "title": "[Confluence] Veeva Orion Product Management > 岗位-医院-剂型三者关系",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 17:14",
+      "source_label": "Wiki",
+      "icon_type": "email"
+    },
+    {
+      "id": "10104",
+      "title": "[JIRA] Minglei Weng mentioned you on ORI-134717 (Jira)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 17:02",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10103",
+      "title": "[JIRA] Yi Yang mentioned you on ORI-134717 (Jira)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 16:50",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10102",
+      "title": "[JIRA] (ORI-136122) 【测试】pagelayout field 中 metadata reference 字段可以设置configuration （metadata reference conditions）",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 16:38",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10101",
+      "title": "[JIRA] (ORI-136124) 测试用例",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 16:26",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10100",
+      "title": "[JIRA] (ORI-135314) 【后端】【实现】支持refer lookup字段，并且列表筛选可以按照原生lookup来筛选",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 16:14",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10099",
+      "title": "[JIRA] (ORI-135314) 【后端】【实现】支持refer lookup字段，并且列表筛选可以按照原生lookup来筛选",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 16:02",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10098",
+      "title": "[JIRA] (ORI-136132) 【Admin】 编辑BR v2模版，添加消息文案，保存后 name 的 cs_前缀丢失",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 15:50",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10097",
+      "title": "[JIRA] (ORI-136132) 【Admin】 编辑BR v2模版，添加消息文案，保存后 name 的 cs_前缀丢失",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 15:38",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10096",
+      "title": "[JIRA] (ORI-136132) 【Admin】 编辑BR v2模版，添加消息文案，保存后 name 的 cs_前缀丢失",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 15:26",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10095",
+      "title": "[JIRA] (ORI-136132) 【Admin】 编辑BR v2模版，添加消息文案，保存后 name 的 cs_前缀丢失",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 15:14",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10094",
+      "title": "[JIRA] (ORI-136132) 【Admin】 编辑BR v2模版，添加消息文案，保存后 name 的 cs_前缀丢失",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 15:02",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "10093",
+      "title": "[JIRA] (ORI-136098) 目标医生归属的有数据选项跟实际不符",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 14:50",
+      "source_label": "Jira",
+      "icon_type": "email"
+    },
+    {
+      "id": "9424",
+      "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 14:38",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9423",
+      "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 14:26",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9422",
+      "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 14:14",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9421",
+      "title": "chinasfa | ORI-136228: improved robustness (!34202)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 14:02",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9420",
+      "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 13:50",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9419",
+      "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 13:38",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9418",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 13:26",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9417",
+      "title": "Re: chinasfa | ORI-135104 feat: allow overriding metadata reference condition via page layout config (!34148)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 13:14",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9416",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 13:02",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9415",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 12:50",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9414",
+      "title": "Re: chinasfa | Resolve ORI-136135 fix: longtext 字段在初始拖入页面时，设置关联字段的固定值输入框，没有展示富文本样式 (!34189)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 12:38",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9413",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 12:26",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9412",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 12:14",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9411",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 12:02",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9410",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 11:50",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9409",
+      "title": "Re: chinasfa | Resolve ORI-132930 \"Feature//support refer lookup\" (!34132)",
+      "is_urgent": false,
+      "is_mentioned": false,
+      "time_text": "周五 11:38",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    },
+    {
+      "id": "9408",
+      "title": "Re: chinasfa | ORI-135104 feat: allow overriding metadata reference condition via page layout config (!34148)",
+      "is_urgent": true,
+      "is_mentioned": true,
+      "time_text": "周五 11:26",
+      "source_label": "GitLab",
+      "icon_type": "email"
+    }
+  ]
+}
