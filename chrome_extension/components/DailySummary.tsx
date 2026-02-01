@@ -215,13 +215,13 @@ const DailySummary: React.FC = () => {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[850px]">
+          <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-56">Jira / Progress</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">任务标题</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-32">今日投入 (h)</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">进度备注</th>
+                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-44">Jira / Progress</th>
+                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">任务标题</th>
+                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-28">今日投入 (h)</th>
+                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-52">进度备注</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -229,7 +229,7 @@ const DailySummary: React.FC = () => {
                 const progress = calculateProgress(task.logged, task.remaining);
                 return (
                   <tr key={task.jira_id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-5 align-top">
+                    <td className="px-4 py-5 align-top">
                       <div className="flex flex-col gap-3">
                         <a 
                           href={`${JIRA_BASE_URL}/${task.jira_id}`} 
@@ -241,7 +241,7 @@ const DailySummary: React.FC = () => {
                           <i className="fa-solid fa-up-right-from-square text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
                         </a>
                         
-                        <div className="space-y-1.5 max-w-[160px]">
+                        <div className="space-y-1.5 max-w-[140px]">
                           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.3)]" 
@@ -261,12 +261,12 @@ const DailySummary: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5 align-top">
+                    <td className="px-4 py-5 align-top">
                       <p className="text-xs font-bold text-slate-700 line-clamp-2 leading-relaxed" title={task.sumamry}>
                         {task.sumamry}
                       </p>
                     </td>
-                    <td className="px-6 py-5 align-top">
+                    <td className="px-4 py-5 align-top">
                       <div className="flex justify-center">
                         <input 
                           type="number"
@@ -279,7 +279,7 @@ const DailySummary: React.FC = () => {
                         />
                       </div>
                     </td>
-                    <td className="px-6 py-5 align-top">
+                    <td className="px-4 py-5 align-top">
                       <div className="relative">
                         <i className="fa-solid fa-pen-to-square text-[9px] text-slate-300 absolute left-0 top-3 pointer-events-none group-focus-within:text-indigo-400 transition-colors"></i>
                         <input 
@@ -295,7 +295,7 @@ const DailySummary: React.FC = () => {
                 );
               }) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center">
+                  <td colSpan={4} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200">
                         <i className="fa-solid fa-clipboard-list text-2xl"></i>
