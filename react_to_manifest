@@ -1,4 +1,4 @@
-@Codebase 我现在的项目是一个 React web 应用。请帮我把它重构为一个原生的 Chrome Extension (Manifest V3)。
+我现在的项目是一个 React web 应用。请帮我把它重构为一个原生的 Chrome Extension (Manifest V3)。
 
 不要使用 React、Vite、TypeScript 或 npm 构建过程。我希望它是纯粹的 HTML, CSS 和 Vanilla JavaScript。
 
@@ -54,7 +54,6 @@
 
 # Constraints
 - 必须使用 Manifest V3 标准。
-- 保持尽可能少的代码侵入，复用现有组件。
-- 给出清晰的代码 Diff 或完整文件示例。
+- 确保界面样式和我现在的 React 版本保持一致 确保界面样式和我现在的 React 版本保持一致
 
 你直接帮我操作，然后在桌面上生成一个新的可直接导入chrome的文件夹
