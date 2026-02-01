@@ -347,7 +347,7 @@ const MeetingGenie: React.FC = () => {
         </>
       ) : (
         <div className="flex gap-6 min-h-[500px] animate-in slide-in-from-left-4 duration-300">
-          <div className="w-56 shrink-0 space-y-2">
+          <div className="w-40 shrink-0 space-y-2">
             {isInitialLoading ? (
                <div className="animate-pulse space-y-2">
                  {[1,2].map(i => <div key={i} className="h-12 bg-slate-100 rounded-2xl w-full"></div>)}
