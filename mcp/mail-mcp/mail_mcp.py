@@ -295,7 +295,7 @@ def mark_email_as_read(email_ids: list[str]) -> str:
 
 
 if __name__ == "__main__":
-    mcp.settings.port = 8081
+    mcp.settings.port = 8210
     mcp.run(transport='sse')
     # mcp.run()
     # print(read_emails_by_category(category='jira', limit=1, start_date="2026-01-29",
