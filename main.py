@@ -339,6 +339,64 @@ async def story_check(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@app.get("/api/gemini/read_email", response_model=ChatResponse)
+async def read_email(
+    message: str = "",
+    model: Optional[str] = None,
+    mock: bool = False
+):
+    """
+    与 gemini-cli 交互的接口 (Read Email 专用)
+    固定使用 mail mcp server 并在 yolo 模式下运行
+    """
+    try:
+        with open("prompts/read_email.md", "r") as f:
+            prompt = f.read()
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Prompt file not found.")
+
+    prompt = prompt + "\n" + message
+
+    try:
+        # 1. Mock 模式处理
+        if mock:
+            result = {
+                "success": True,
+                "response": "This is a mocked response for reading emails.",
+                "error": None,
+                "logs": "YOLO mode is enabled. All tool calls will be automatically approved."
+            }
+        else:
+            kwargs = {
+                "approval_mode": "yolo"
+            }
+
+            result = gemini_client.chat(
+                prompt,
+                model=model,
+                mcp_servers=['mail'],
+                **kwargs
+            )
+
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Unknown error occurred")
+            )
+
+        return ChatResponse(
+            success=True,
+            response=result["response"],
+            error=result.get("error"),
+            logs=result.get("logs")
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
 @app.get("/api/gemini/health")
 async def gemini_health():
     """
@@ -506,3 +564,4 @@ async def get_session_status():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+

@@ -95,6 +95,10 @@ class GeminiCLIClient:
             line = line.strip()
             if not line:
                 continue
+
+            # 明确忽略 DeprecationWarning
+            if "DeprecationWarning" in line:
+                continue
             
             if self._is_info_message(line):
                 info_lines.append(line)
@@ -274,12 +278,15 @@ class GeminiCLIClient:
             # 解析 stderr，区分错误和信息性消息
             error_msg, info_logs = self._parse_stderr(stderr)
             
-            # 如果返回码不为0，即使没有明确的错误消息，也认为有错误
-            if process.returncode != 0 and not error_msg:
-                error_msg = stderr.strip() if stderr else "Command failed with non-zero exit code"
+            # 定义成功条件：返回码为0，或者返回码不为0但没有解析出真正的错误信息
+            is_success = process.returncode == 0 or (process.returncode != 0 and not error_msg)
+
+            # 如果最终判断为不成功，确保 error_msg 字段有内容
+            if not is_success and not error_msg:
+                error_msg = stderr.strip() if stderr else "Command failed with non-zero exit code and no specific error message."
             
             return {
-                "success": process.returncode == 0,
+                "success": is_success,
                 "response": stdout.strip() if stdout else "",
                 "error": error_msg,
                 "logs": info_logs,  # 信息性日志
