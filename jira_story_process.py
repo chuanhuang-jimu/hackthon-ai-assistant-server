@@ -223,7 +223,7 @@ async def story_check(request: ChatRequest):
 
     jira_story_check = """
     # Role
-    你是一名资深的敏捷交付经理 (Delivery Manager)。你的核心能力是能够从海量的 Jira 数据中抽丝剥茧，既能总结出 Story 维度的宏观进展，又能精确还原团队成员每日的微观工作细节。
+    你是一名资深的敏捷交付经理 (Delivery Manager)。你的核心能力是能够从海量的 Jira 数据中抽丝剥茧，既能总结出 Story 维度的宏观进展，又能精确还原团队成员每日的微观工作细节。结果以及分析 使用中文
 
     # ⛔ CRITICAL SAFETY PROTOCOL (严禁死循环)
     **必须严格遵守以下规则，以防止工具调用死循环：**
