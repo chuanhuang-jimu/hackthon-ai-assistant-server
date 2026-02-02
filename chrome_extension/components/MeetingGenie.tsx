@@ -44,6 +44,7 @@ const MeetingGenie: React.FC = () => {
   const [selectedTagId, setSelectedTagId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<{key: string, content: string, timestamp: number} | null>(null);
@@ -210,6 +211,24 @@ const MeetingGenie: React.FC = () => {
     }
   };
 
+  const handleBatchRefresh = async () => {
+    setIsBatchRefreshing(true);
+    setError(null);
+    try {
+      for (const story of stories) {
+        const cache = getValidCache(story.key);
+        if (!cache || (Date.now() - cache.timestamp) > 6 * 60 * 60 * 1000) {
+          await handleSmartAnalysis(story.key);
+        }
+      }
+    } catch (error) {
+      console.error("Batch refresh failed:", error);
+      setError("批量刷新过程中断，请稍后重试。");
+    } finally {
+      setIsBatchRefreshing(false);
+    }
+  };
+
   const getStatusStyle = (status: string) => {
     const s = status.toLowerCase();
     if (s.includes('complete') || s.includes('done') || s.includes('resolved') || s.includes('closed')) 
@@ -297,7 +316,13 @@ const MeetingGenie: React.FC = () => {
                 <p className="text-[10px] text-slate-400 font-medium">当前活跃: {stories.length} 个任务 (今日内有效)</p>
               </div>
             </div>
-            <button onClick={fetchJiraStories} disabled={loading} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">{loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-arrows-rotate"></i>}同步看板</button>
+            <div className="flex items-end gap-3">
+              <button onClick={fetchJiraStories} disabled={loading || isBatchRefreshing} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 disabled:opacity-50">{loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-arrows-rotate"></i>}同步看板</button>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] text-slate-400 mb-1">点击需谨慎，费时费token</span>
+                <button onClick={handleBatchRefresh} disabled={loading || isBatchRefreshing} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 disabled:opacity-50">{isBatchRefreshing ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}一键分析</button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-3">

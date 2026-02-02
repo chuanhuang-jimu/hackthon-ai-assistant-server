@@ -26,3 +26,17 @@ export interface TagRule {
   description: string;
   rules: string[]; // 字符串数组，用于配置管理
 }
+
+// New interface for AnalysisCache, moved from MeetingGenie.tsx
+export interface AnalysisCache {
+  content: string;
+  expiry: number;
+  timestamp: number; // Added timestamp field
+}
+
+// The BoardCache interface is also defined in MeetingGenie.tsx, let's move it too.
+export interface BoardCache {
+  data: JiraStory[];
+  timestamp: number;
+  expiry: number;
+}

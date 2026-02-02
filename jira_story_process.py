@@ -247,11 +247,20 @@ async def story_check(request: ChatRequest):
         * *说明*：严格请求标准字段 `issuetype` 以确定任务类型，请求 `resolution` 以辅助判断完成情况。
     * **Limit**: `100`
 
-    ## 第三步：时间窗口锁定
-    获取当前日期及星期，识别出**最近的两个有效工作日**（跳过周六、周日），计算出以下两个绝对日期：
-    * **Target_Date_1 (最近工作日)**：若当前是周一或周末，取上周五；若当前是周二，取昨天（周一）；其余情况取昨天。
-    * **Target_Date_2 (前一工作日)**：若当前是周一或周末，取上周四；若当前是周二，取上周五；其余情况取前天。
-    * *筛选标准*：后续仅提取 `created` (评论) 或 `started` (工时) 落在 [Target_Date_2 00:00:00] 至 [Target_Date_1 23:59:59] 之间的数据。
+    ## 第三步：时间窗口锁定与范围界定
+    首先定义参数get_all_work_logs的值为`{{get_all_work_logs}}`，并根据以下分支执行：
+    
+    ### 分支 A：全量提取模式
+    * **触发条件**：get_all_work_logs为 `True`。
+    * **执行动作**：**跳过**日期计算与时间筛选，提取所有可用的历史数据。
+    
+    ### 分支 B：窗口提取模式
+    * **触发条件**： get_all_work_logs为 `False` 或空。
+    * **执行动作**：
+        1.  获取当前日期及星期，识别出**最近的两个有效工作日**（跳过周六、周日），计算出以下两个绝对日期：
+            * **Target_Date_1 (最近工作日)**：若当前是周一或周末，取上周五；若当前是周二，取昨天（周一）；其余情况取昨天。
+            * **Target_Date_2 (前一工作日)**：若当前是周一或周末，取上周四；若当前是周二，取上周五；其余情况取前天。
+        2.  **筛选标准**：后续仅提取 `created` (评论) 或 `started` (工时) 落在 **[Target_Date_2 00:00:00] 至 [Target_Date_1 23:59:59]** 之间的数据。
 
     ## 第四步：内存数据处理 (无额外工具调用)
     仅利用第二步返回的 JSON 数据，在内存中进行逻辑处理：
@@ -320,6 +329,7 @@ async def story_check(request: ChatRequest):
 
     jira_story_check = jira_story_check.replace("{{STORY_KEY}}", request.jira_id)
     jira_story_check = jira_story_check.replace("{{CURRENT_DATE}}", datetime.datetime.now().strftime("%Y-%m-%d"))
+    jira_story_check = jira_story_check.replace("{{get_all_work_logs}}", str(request.get_all_work_logs))
 
     try:
         if request.mock:
