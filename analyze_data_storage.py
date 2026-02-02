@@ -94,20 +94,58 @@ def parse_to_json(text, story_id):
     
     print(f"从 Redis (Key: {redis_key}) 读取了 {len(final_data)} 条已有数据。")
 
-    # 数据追加逻辑
+    # 数据清理与合并逻辑
+    
+    # 1. 清理 Redis 中的现有脏数据（去重）
+    initial_count = len(final_data)
+    
+    # 使用字典去重，保留每个复合键最后出现的元素。
+    # 这一步同时也为后续合并 new_parsed_data 准备了 existing_map。
+    existing_map = {
+        (item.get('User'), item.get('Jira_ID'), item.get('Date')): item
+        for item in final_data if isinstance(item, dict) and all(item.get(k) for k in ['User', 'Jira_ID', 'Date'])
+    }
+    final_data = list(existing_map.values())
+    
+    cleaned_count = len(final_data)
+    if initial_count > cleaned_count:
+        print(f"数据清理：检测到并移除了 {initial_count - cleaned_count} 条重复的现有记录。")
+
+    # 2. 将新解析的数据合并到已清理的数据中
+    update_count = 0
     append_count = 0
+
     for new_item in new_parsed_data:
-        if new_item not in final_data:
+        # 确保 new_item 格式正确
+        if not (isinstance(new_item, dict) and all(new_item.get(k) for k in ['User', 'Jira_ID', 'Date'])):
+            continue
+            
+        key = (new_item['User'], new_item['Jira_ID'], new_item['Date'])
+        existing_item = existing_map.get(key)
+
+        if existing_item:
+            # 键存在，更新
+            if existing_item.get('Content') != new_item.get('Content') or existing_item.get('Comment') != new_item.get('Comment'):
+                existing_item.update(new_item)
+                update_count += 1
+        else:
+            # 键不存在，新增
             final_data.append(new_item)
+            existing_map[key] = new_item
             append_count += 1
 
-    if append_count > 0:
-        print(f"成功追加 {append_count} 条新记录。")
-        # 将最终结果写回 Redis
+    # 3. 结果写回
+    # 只要有任何变动（清理、新增、更新），就执行写回操作
+    if initial_count != cleaned_count or append_count > 0 or update_count > 0:
+        if append_count > 0:
+            print(f"成功追加 {append_count} 条新记录。")
+        if update_count > 0:
+            print(f"成功更新 {update_count} 条现有记录。")
+        
         set_redis(redis_key, final_data)
         print(f"数据已写回 Redis (Key: {redis_key})。")
     else:
-        print("没有新记录需要追加（数据已存在 或 解析结果为空）。")
+        print("无需改动：数据已是最新且无重复。")
 
     return final_data
 
