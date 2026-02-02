@@ -96,7 +96,7 @@ const EmailQuickRead: React.FC = () => {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [data]);
+  }, []);
 
   useEffect(() => {
     const savedProcessedIds = localStorage.getItem(PROCESSED_IDS_KEY);
