@@ -36,9 +36,10 @@ const REDIS_KEY_RULES = 'scrum_master_tag_rules';
 interface MeetingGenieProps {
   getAllWorkLogs: boolean;
   isMock: boolean;
+  forceBatchRefresh: boolean;
 }
 
-const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock }) => {
+const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, forceBatchRefresh }) => {
   const [activeSubTab, setActiveSubTab] = useState<GenieSubTab>('board');
   const [stories, setStories] = useState<JiraStory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -228,7 +229,7 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock }) =
     try {
       for (const story of stories) {
         const cache = getValidCache(story.key);
-        if (!cache || (Date.now() - cache.timestamp) > 6 * 60 * 60 * 1000) {
+        if (forceBatchRefresh || !cache || (Date.now() - cache.timestamp) > 6 * 60 * 60 * 1000) {
           await handleSmartAnalysis(story.key);
         }
       }

@@ -17,6 +17,12 @@ const App: React.FC = () => {
   const [isMock, setIsMock] = useState(() => {
     return localStorage.getItem('isMock') === 'true';
   });
+  const [forceBatchRefresh, setForceBatchRefresh] = useState(() => {
+    return localStorage.getItem('forceBatchRefresh') === 'true';
+  });
+  const [userEmail, setUserEmail] = useState(() => {
+    return localStorage.getItem('userEmail') || '';
+  });
 
   useEffect(() => {
     localStorage.setItem('getAllWorkLogs', String(getAllWorkLogs));
@@ -25,6 +31,14 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('isMock', String(isMock));
   }, [isMock]);
+
+  useEffect(() => {
+    localStorage.setItem('forceBatchRefresh', String(forceBatchRefresh));
+  }, [forceBatchRefresh]);
+
+  useEffect(() => {
+    localStorage.setItem('userEmail', userEmail);
+  }, [userEmail]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
@@ -59,10 +73,10 @@ const App: React.FC = () => {
             <MorningBrief />
           </div>
           <div style={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
-            <DailySummary getAllWorkLogs={getAllWorkLogs} isMock={isMock} />
+            <DailySummary getAllWorkLogs={getAllWorkLogs} isMock={isMock} userEmail={userEmail} />
           </div>
           <div style={{ display: activeTab === 'genie' ? 'block' : 'none' }}>
-            <MeetingGenie getAllWorkLogs={getAllWorkLogs} isMock={isMock} />
+            <MeetingGenie getAllWorkLogs={getAllWorkLogs} isMock={isMock} forceBatchRefresh={forceBatchRefresh} />
           </div>
         </div>
       </main>
@@ -74,6 +88,10 @@ const App: React.FC = () => {
         setGetAllWorkLogs={setGetAllWorkLogs}
         isMock={isMock}
         setIsMock={setIsMock}
+        forceBatchRefresh={forceBatchRefresh}
+        setForceBatchRefresh={setForceBatchRefresh}
+        userEmail={userEmail}
+        setUserEmail={setUserEmail}
       />
     </div>
   );

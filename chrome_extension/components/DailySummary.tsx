@@ -11,9 +11,10 @@ interface DailySummaryCache {
 interface DailySummaryProps {
   getAllWorkLogs: boolean;
   isMock: boolean;
+  userEmail: string;
 }
 
-const DailySummary: React.FC<DailySummaryProps> = ({ getAllWorkLogs, isMock }) => {
+const DailySummary: React.FC<DailySummaryProps> = ({ getAllWorkLogs, isMock, userEmail }) => {
   const [tasks, setTasks] = useState<JiraTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
@@ -105,7 +106,8 @@ const DailySummary: React.FC<DailySummaryProps> = ({ getAllWorkLogs, isMock }) =
           },
           body: JSON.stringify({
             get_all_work_logs: getAllWorkLogs,
-            mock: isMock
+            mock: isMock,
+            user_email: userEmail
           }), 
         });
 
