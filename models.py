@@ -7,6 +7,7 @@ class ChatRequest(BaseModel):
     mock: Optional[bool] = False
     user_email: Optional[str] = "chuan.huang@veeva.com"
     jira_id: Optional[str] = None
+    get_all_work_logs: Optional[bool] = False
     message: Optional[str] = ''
     prompt_key: Optional[str] = 'default'
     model: Optional[str] = None

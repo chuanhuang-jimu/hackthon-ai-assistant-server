@@ -33,7 +33,12 @@ const DEFAULT_RULES: TagRule[] = [
 const REDIS_BASE_URL = 'http://localhost:7379';
 const REDIS_KEY_RULES = 'scrum_master_tag_rules';
 
-const MeetingGenie: React.FC = () => {
+interface MeetingGenieProps {
+  getAllWorkLogs: boolean;
+  isMock: boolean;
+}
+
+const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock }) => {
   const [activeSubTab, setActiveSubTab] = useState<GenieSubTab>('board');
   const [stories, setStories] = useState<JiraStory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -160,7 +165,9 @@ const MeetingGenie: React.FC = () => {
         body: JSON.stringify({
           prompt_key: "get_jira_board_story",
           mcp_servers: ["jira"],
-          tag_rules: rules 
+          tag_rules: rules,
+          get_all_work_logs: getAllWorkLogs,
+          mock: isMock
         }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -196,7 +203,11 @@ const MeetingGenie: React.FC = () => {
       const response = await fetch('http://127.0.0.1:8200/api/gemini/story/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jira_id: jiraId }),
+        body: JSON.stringify({
+          jira_id: jiraId,
+          get_all_work_logs: getAllWorkLogs,
+          mock: isMock
+        }),
       });
       const data = await response.json();
       // 分析结果也可以考虑 end-of-day 过期

@@ -8,7 +8,12 @@ interface DailySummaryCache {
   expiry: number;
 }
 
-const DailySummary: React.FC = () => {
+interface DailySummaryProps {
+  getAllWorkLogs: boolean;
+  isMock: boolean;
+}
+
+const DailySummary: React.FC<DailySummaryProps> = ({ getAllWorkLogs, isMock }) => {
   const [tasks, setTasks] = useState<JiraTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
@@ -98,7 +103,10 @@ const DailySummary: React.FC = () => {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({}), 
+          body: JSON.stringify({
+            get_all_work_logs: getAllWorkLogs,
+            mock: isMock
+          }), 
         });
 
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);

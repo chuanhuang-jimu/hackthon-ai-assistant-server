@@ -1,17 +1,34 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppTab } from './types.ts';
 import Header from './components/Header';
 import MorningBrief from './components/MorningBrief';
 import DailySummary from './components/DailySummary';
 import MeetingGenie from './components/MeetingGenie';
+import SettingsModal from './components/SettingsModal';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>('morning');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const [getAllWorkLogs, setGetAllWorkLogs] = useState(() => {
+    return localStorage.getItem('getAllWorkLogs') === 'true';
+  });
+  const [isMock, setIsMock] = useState(() => {
+    return localStorage.getItem('isMock') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('getAllWorkLogs', String(getAllWorkLogs));
+  }, [getAllWorkLogs]);
+
+  useEffect(() => {
+    localStorage.setItem('isMock', String(isMock));
+  }, [isMock]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
-      <Header />
+      <Header onSettingsClick={() => setIsSettingsOpen(true)} />
       
       {/* Tab Navigation */}
       <div className="bg-white border-b px-8 flex gap-8 shrink-0">
@@ -42,13 +59,22 @@ const App: React.FC = () => {
             <MorningBrief />
           </div>
           <div style={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
-            <DailySummary />
+            <DailySummary getAllWorkLogs={getAllWorkLogs} isMock={isMock} />
           </div>
           <div style={{ display: activeTab === 'genie' ? 'block' : 'none' }}>
-            <MeetingGenie />
+            <MeetingGenie getAllWorkLogs={getAllWorkLogs} isMock={isMock} />
           </div>
         </div>
       </main>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        getAllWorkLogs={getAllWorkLogs}
+        setGetAllWorkLogs={setGetAllWorkLogs}
+        isMock={isMock}
+        setIsMock={setIsMock}
+      />
     </div>
   );
 };
