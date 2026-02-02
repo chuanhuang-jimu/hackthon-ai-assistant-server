@@ -1,18 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
-import { GenieSubTab, TagRule, JiraStory } from '../types.ts';
-
-interface AnalysisCache {
-  content: string;
-  expiry: number;
-}
-
-interface BoardCache {
-  data: JiraStory[];
-  timestamp: number;
-  expiry: number;
-}
+import { GenieSubTab, TagRule, JiraStory, AnalysisCache, BoardCache } from '../types.ts';
 
 const DEFAULT_RULES: TagRule[] = [
   {
@@ -57,7 +46,7 @@ const MeetingGenie: React.FC = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{key: string, content: string} | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{key: string, content: string, timestamp: number} | null>(null);
 
   const BOARD_CACHE_KEY = 'get_jira_board_story_v3_with_expiry';
   const ANALYSIS_PREFIX = 'jira_analysis_';
@@ -71,7 +60,13 @@ const MeetingGenie: React.FC = () => {
 
   const formatTime = (ts: number) => {
     const d = new Date(ts);
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const loadRules = useCallback(async () => {
@@ -143,12 +138,12 @@ const MeetingGenie: React.FC = () => {
     }
   }, [loadRules]);
 
-  const getValidCache = (key: string): string | null => {
+  const getValidCache = (key: string): AnalysisCache | null => {
     const cached = localStorage.getItem(`${ANALYSIS_PREFIX}${key}`);
     if (!cached) return null;
     try {
       const data: AnalysisCache = JSON.parse(cached);
-      return Date.now() > data.expiry ? null : data.content;
+      return Date.now() > data.expiry ? null : data; // Return the whole data object
     } catch (e) {
       return null;
     }
@@ -204,11 +199,11 @@ const MeetingGenie: React.FC = () => {
       });
       const data = await response.json();
       // 分析结果也可以考虑 end-of-day 过期
-      localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({ 
-        content: data.response || "分析完成。", 
-        expiry: getEndOfToday() 
-      }));
-    } catch (err: any) {
+            localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({
+              content: data.response || "分析完成。",
+              expiry: getEndOfToday(),
+              timestamp: Date.now() // Add this line
+            }));    } catch (err: any) {
       console.error(err);
     } finally {
       setAnalyzingKey(null);
@@ -326,7 +321,13 @@ const MeetingGenie: React.FC = () => {
                     <h4 className="text-[14px] font-semibold text-slate-700 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2" title={story.summary}>{story.summary}</h4>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 self-center sm:self-auto">
-                    {hasCache && <button onClick={() => { setAnalysisResult({ key: story.key, content: getValidCache(story.key)! }); setShowModal(true); }} className="flex items-center justify-center w-9 h-9 bg-sky-50 text-sky-600 rounded-xl hover:bg-sky-100 border border-sky-100 transition-all hover:scale-105 active:scale-95"><i className="fa-solid fa-eye text-sm"></i></button>}
+                    {hasCache && <button onClick={() => {
+                      const cachedAnalysis = getValidCache(story.key);
+                      if (cachedAnalysis) {
+                        setAnalysisResult({ key: story.key, content: cachedAnalysis.content, timestamp: cachedAnalysis.timestamp });
+                        setShowModal(true);
+                      }
+                    }} className="flex items-center justify-center w-9 h-9 bg-sky-50 text-sky-600 rounded-xl hover:bg-sky-100 border border-sky-100 transition-all hover:scale-105 active:scale-95"><i className="fa-solid fa-eye text-sm"></i></button>}
                     <button onClick={() => handleSmartAnalysis(story.key)} disabled={analyzingKey === story.key} className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${analyzingKey === story.key ? 'bg-slate-100 text-slate-300' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-100 hover:scale-105 active:scale-95'}`}>{analyzingKey === story.key ? <i className="fa-solid fa-spinner fa-spin text-xs"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}</button>
                   </div>
                 </div>
@@ -389,7 +390,7 @@ const MeetingGenie: React.FC = () => {
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowModal(false)}></div>
           <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
             <div className="flex items-center justify-between p-7 border-b shrink-0 bg-white">
-              <div className="flex items-center gap-4"><div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl shadow-inner"><i className="fa-solid fa-wand-magic-sparkles"></i></div><div><h3 className="text-xl font-bold text-slate-800">智能分析报告</h3><p className="text-xs text-slate-400 font-mono tracking-tight">Jira ID: {analysisResult.key}</p></div></div>
+              <div className="flex items-center gap-4"><div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl shadow-inner"><i className="fa-solid fa-wand-magic-sparkles"></i></div><div><h3 className="text-xl font-bold text-slate-800">智能分析报告</h3><p className="text-xs text-slate-400 font-mono tracking-tight">Jira ID: {analysisResult.key} <span className="ml-4">缓存数据获取时间: {formatTime(analysisResult.timestamp)}</span></p></div></div>
               <button onClick={() => setShowModal(false)} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-slate-50 rounded-full transition-colors"><i className="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white" dangerouslySetInnerHTML={getRenderedMarkdown(analysisResult.content)} />
