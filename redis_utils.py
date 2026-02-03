@@ -16,7 +16,10 @@ def query_redis(method: str, key: str) -> dict:
         raw_json_string = response_json.get(method)
 
         if raw_json_string and isinstance(raw_json_string, str):
-            data = json.loads(raw_json_string)
+            try:
+                data = json.loads(raw_json_string)
+            except json.JSONDecodeError:
+                data = raw_json_string
         # If the key exists but the value is not a string (e.g. Redis list),
         # webdis might return it directly as a JSON array.
         elif raw_json_string and isinstance(raw_json_string, list):

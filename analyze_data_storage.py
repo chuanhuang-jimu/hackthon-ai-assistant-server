@@ -25,7 +25,19 @@ def parse_to_json(text, story_id):
         print("Warning: 未能从文本中提取 Sprint ID，使用默认值。")
 
     # ---------------------------------------------------------
-    # 1. 核心解析逻辑
+    # 1. 提取并存储“最新情况摘要”
+    # ---------------------------------------------------------
+    summary_match = re.search(r'(\*\*📝 最新情况摘要\*\*:\n.*?)---', text, re.DOTALL)
+    if summary_match:
+        summary_content = summary_match.group(1).strip()
+        summary_redis_key = f"story:summary:{story_id}"
+        set_redis(summary_redis_key, summary_content)
+        print(f"成功提取“最新情况摘要”并存入 Redis (Key: {summary_redis_key})。")
+    else:
+        print("Warning: 未能在文本中找到“最新情况摘要”部分。")
+
+    # ---------------------------------------------------------
+    # 2. 核心解析逻辑
     # ---------------------------------------------------------
     lines = text.split('\n')
     new_parsed_data = []
@@ -79,7 +91,7 @@ def parse_to_json(text, story_id):
                 })
 
     # ---------------------------------------------------------
-    # 2. Redis 操作逻辑
+    # 3. Redis 操作逻辑
     # ---------------------------------------------------------
 
     # 构造 Redis Key, 格式: story:personal_progress:{story_id}
@@ -159,12 +171,17 @@ def get_story_description(story_id):
     tags_key = f"story:tags:{story_id}"
     tags_data = query_redis('GET', tags_key)
 
-    # If both are missing, return an error
-    if not personal_process_data and not tags_data:
-        return {"error": f"在 Redis 中未找到 story '{story_id}' 的任何相关数据（进度或标签）。"}
+    # 3. Get summary data
+    summary_key = f"story:summary:{story_id}"
+    summary_data = query_redis('GET', summary_key)
 
-    # 3. Combine into the final dictionary
+    # If all are missing, return an error
+    if not personal_process_data and not tags_data and not summary_data:
+        return {"error": f"在 Redis 中未找到 story '{story_id}' 的任何相关数据（进度、标签或综述）。"}
+
+    # 4. Combine into the final dictionary
     result = {
+        "summary": summary_data if summary_data else "",
         "tags": tags_data if tags_data else [],
         "personal_process_data": personal_process_data if personal_process_data else []
     }
@@ -184,14 +201,11 @@ if __name__ == "__main__":
             print("警告: 结果为空，请检查 Regex 匹配逻辑。")
         
         print("\n--- Testing story_description ---")
-        story_data = get_story_description("Plum 25R3.2 Sprint 2", "ORI-114277")
+        story_data = get_story_description("ORI-114277")
         print(json.dumps(story_data, indent=2, ensure_ascii=False))
 
-        story_data_not_found = get_story_description("Plum 25R3.2 Sprint 2", "ORI-000000")
+        story_data_not_found = get_story_description("ORI-000000")
         print(json.dumps(story_data_not_found, indent=2, ensure_ascii=False))
-
-        sprint_not_found = get_story_description("Unknown Sprint", "ORI-114277")
-        print(json.dumps(sprint_not_found, indent=2, ensure_ascii=False))
 
     except Exception as e:
         print(f"\n执行过程中遇到错误: {e}")
