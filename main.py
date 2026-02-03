@@ -73,7 +73,7 @@ async def chat_with_gemini(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@app.get("/api/gemini/read_email", response_model=ChatResponse)
+@app.get("/api/gemini/email/read", response_model=ChatResponse)
 async def read_email(
     message: str = "",
     model: Optional[str] = None,
