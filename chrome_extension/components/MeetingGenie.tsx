@@ -1,226 +1,452 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { marked } from 'marked';
+
 import { GenieSubTab, TagRule, JiraStory, AnalysisCache, BoardCache } from '../types.ts';
 
+import { fetchWithBoardId } from '../src/utils/api';
+
+
+
 const DEFAULT_RULES: TagRule[] = [
+
   {
+
     id: 'rule-delay',
+
     tagName: 'delay',
+
     icon: 'fa-clock',
+
     color: 'rose',
+
     description: '延期判定标准',
+
     rules: [
+
       "从 Summary 中解析 '提测日期' 或 '计划完成' 等时间词汇",
+
       "若【当前时间 > 提取的时间点】且【任务状态不是 Done】则标记",
+
       "优先匹配 'XX.XX 提测' 这种格式的简写"
+
     ]
+
   },
+
   {
+
     id: 'rule-risk',
+
     tagName: 'risk',
+
     icon: 'fa-triangle-exclamation',
+
     color: 'amber',
+
     description: '风险识别标准',
+
     rules: [
+
       "识别评论区中包含 '阻塞'、'暂停'、'无法复现' 等关键词",
+
       "识别多端反馈中提到的兼容性风险（如 WeChat/Web 不一致）",
+
       "识别 48 小时内无任何 Worklog 且非 Done 状态的任务"
+
     ]
+
   }
+
 ];
 
+
+
 const REDIS_BASE_URL = 'http://localhost:7379';
+
 const REDIS_KEY_RULES = 'scrum_master_tag_rules';
 
+
+
 interface MeetingGenieProps {
+
   getAllWorkLogs: boolean;
+
   isMock: boolean;
+
   forceBatchRefresh: boolean;
+
 }
 
+
+
 const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, forceBatchRefresh }) => {
+
   const [activeSubTab, setActiveSubTab] = useState<GenieSubTab>('board');
+
   const [stories, setStories] = useState<JiraStory[]>([]);
+
   const [loading, setLoading] = useState(false);
+
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+
   const [analyzingKey, setAnalyzingKey] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
+
   const [rules, setRules] = useState<TagRule[]>([]);
+
   const [selectedTagId, setSelectedTagId] = useState<string>('');
+
   const [isSaving, setIsSaving] = useState(false);
+
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
   const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
 
+
+
   const [showModal, setShowModal] = useState(false);
+
   const [analysisResult, setAnalysisResult] = useState<{key: string, content: string, timestamp: number} | null>(null);
 
+
+
   const BOARD_CACHE_KEY = 'get_jira_board_story_v3_with_expiry';
+
   const ANALYSIS_PREFIX = 'jira_analysis_';
+
   const JIRA_BASE_URL = 'https://jira.veevadev.com/browse';
 
+
+
   const getEndOfToday = () => {
+
     const now = new Date();
+
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
     return end.getTime();
+
   };
+
+
 
   const formatTime = (ts: number) => {
+
     const d = new Date(ts);
+
     const year = d.getFullYear();
+
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
+
     const day = d.getDate().toString().padStart(2, '0');
+
     const hours = d.getHours().toString().padStart(2, '0');
+
     const minutes = d.getMinutes().toString().padStart(2, '0');
+
     const seconds = d.getSeconds().toString().padStart(2, '0');
+
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
   };
+
+
 
   const loadRules = useCallback(async () => {
+
     setIsInitialLoading(true);
+
     try {
-      const response = await fetch(`${REDIS_BASE_URL}/get/${REDIS_KEY_RULES}`, {
+
+      const response = await fetchWithBoardId(`${REDIS_BASE_URL}/get/${REDIS_KEY_RULES}`, {
+
         method: 'GET',
+
         mode: 'cors',
+
         headers: { 'Accept': 'application/json' }
+
       });
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
       const wrapper = await response.json();
+
       const redisValue = wrapper.get;
+
       if (redisValue) {
+
         const parsedRules = typeof redisValue === 'string' ? JSON.parse(redisValue) : redisValue;
+
         if (Array.isArray(parsedRules) && parsedRules.length > 0) {
+
           setRules(parsedRules);
+
           setSelectedTagId(parsedRules[0].id);
+
           return;
+
         }
+
       }
+
       throw new Error('No data');
+
     } catch (err) {
+
       const local = localStorage.getItem(REDIS_KEY_RULES);
+
       if (local) {
+
         const parsed = JSON.parse(local);
+
         setRules(parsed);
+
         setSelectedTagId(parsed[0]?.id || '');
+
       } else {
+
         setRules(DEFAULT_RULES);
+
         setSelectedTagId(DEFAULT_RULES[0].id);
+
       }
+
     } finally {
+
       setIsInitialLoading(false);
+
     }
+
   }, []);
 
+
+
   const saveRulesToRedis = async () => {
+
     setIsSaving(true);
+
     try {
+
       const rulesString = JSON.stringify(rules);
+
       localStorage.setItem(REDIS_KEY_RULES, rulesString);
+
       const saveUrl = `${REDIS_BASE_URL}/set/${REDIS_KEY_RULES}/${encodeURIComponent(rulesString)}`;
-      const response = await fetch(saveUrl, { method: 'GET', mode: 'cors' });
+
+      const response = await fetchWithBoardId(saveUrl, { method: 'GET', mode: 'cors' });
+
       if (!response.ok) throw new Error('Save failed');
+
       alert('配置已成功持久化至 Redis');
+
     } catch (err) {
+
       alert('同步失败，已保存至本地。');
+
     } finally {
+
       setIsSaving(false);
+
     }
+
   };
+
+
 
   useEffect(() => {
+
     loadRules();
+
     const cachedData = localStorage.getItem(BOARD_CACHE_KEY);
+
     if (cachedData) {
+
       try {
+
         const parsed: BoardCache = JSON.parse(cachedData);
+
         if (Date.now() < parsed.expiry) {
+
           setStories(parsed.data);
+
           setLastSyncTime(parsed.timestamp);
+
         } else {
+
           localStorage.removeItem(BOARD_CACHE_KEY);
+
         }
+
       } catch (e) {
+
         localStorage.removeItem(BOARD_CACHE_KEY);
+
       }
+
     }
+
   }, [loadRules]);
 
+
+
   const getValidCache = (key: string): AnalysisCache | null => {
+
     const cached = localStorage.getItem(`${ANALYSIS_PREFIX}${key}`);
+
     if (!cached) return null;
+
     try {
+
       const data: AnalysisCache = JSON.parse(cached);
+
       return Date.now() > data.expiry ? null : data; // Return the whole data object
+
     } catch (e) {
+
       return null;
+
     }
+
   };
+
+
 
   const fetchJiraStories = async () => {
+
     setLoading(true);
+
     setError(null);
+
     try {
-      const response = await fetch('http://127.0.0.1:8200/api/gemini/board/story/list', {
+
+      const response = await fetchWithBoardId('http://127.0.0.1:8200/api/gemini/board/story/list', {
+
         method: 'POST',
+
         headers: { 'Content-Type': 'application/json' },
+
         body: JSON.stringify({
+
           prompt_key: "get_jira_board_story",
+
           mcp_servers: ["jira"],
+
           tag_rules: rules,
+
           get_all_work_logs: getAllWorkLogs,
+
           mock: isMock
+
         }),
+
       });
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
       const data = await response.json();
+
       if (data.success && data.response) {
+
         let content = data.response.trim();
+
         const jsonBlockRegex = /```json\s+([\s\S]*?)\s+```/i;
+
         const match = content.match(jsonBlockRegex);
+
         const jsonStr = match ? match[1] : content;
+
         const parsed = JSON.parse(jsonStr);
+
         const finalData = Array.isArray(parsed) ? parsed : [];
+
         const now = Date.now();
+
         
+
         setStories(finalData);
+
         setLastSyncTime(now);
+
         
+
         localStorage.setItem(BOARD_CACHE_KEY, JSON.stringify({ 
+
           data: finalData, 
+
           timestamp: now,
+
           expiry: getEndOfToday() 
+
         }));
+
       }
+
     } catch (err: any) {
+
       setError(err.message || "同步失败");
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
+
+
   const handleSmartAnalysis = async (jiraId: string) => {
+
     setAnalyzingKey(jiraId);
+
     try {
-      const response = await fetch('http://127.0.0.1:8200/api/gemini/story/check', {
+
+      const response = await fetchWithBoardId('http://127.0.0.1:8200/api/gemini/story/check', {
+
         method: 'POST',
+
         headers: { 'Content-Type': 'application/json' },
+
         body: JSON.stringify({
+
           jira_id: jiraId,
+
           get_all_work_logs: getAllWorkLogs,
+
           mock: isMock
+
         }),
+
       });
+
       const data = await response.json();
+
       // 分析结果也可以考虑 end-of-day 过期
+
             localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({
+
               content: data.response || "分析完成。",
+
               expiry: getEndOfToday(),
+
               timestamp: Date.now() // Add this line
-            }));    } catch (err: any) {
+
+            }));
+
+    } catch (err: any) {
+
       console.error(err);
+
     } finally {
+
       setAnalyzingKey(null);
+
     }
+
   };
 
   const handleBatchRefresh = async () => {

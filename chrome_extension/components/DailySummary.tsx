@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { JiraTask } from '../types.ts';
+import { fetchWithBoardId } from '../src/utils/api';
 
 interface DailySummaryCache {
   tasks: JiraTask[];
@@ -97,7 +98,7 @@ const DailySummary: React.FC<DailySummaryProps> = ({ getAllWorkLogs, isMock, use
       if (useMock) {
         rawTasks = MOCK_DATA;
       } else {
-        const response = await fetch(`${API_BASE_URL}/api/gemini/board/personal/task/processing`, {
+        const response = await fetchWithBoardId(`${API_BASE_URL}/api/gemini/board/personal/task/processing`, {
           method: 'POST',
           mode: 'cors',
           headers: { 

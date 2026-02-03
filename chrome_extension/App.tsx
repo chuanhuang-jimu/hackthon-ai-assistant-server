@@ -23,6 +23,9 @@ const App: React.FC = () => {
   const [userEmail, setUserEmail] = useState(() => {
     return localStorage.getItem('userEmail') || '';
   });
+  const [boardId, setBoardId] = useState(() => {
+    return localStorage.getItem('boardId') || '';
+  });
 
   useEffect(() => {
     localStorage.setItem('getAllWorkLogs', String(getAllWorkLogs));
@@ -39,6 +42,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('userEmail', userEmail);
   }, [userEmail]);
+
+  useEffect(() => {
+    localStorage.setItem('boardId', boardId);
+  }, [boardId]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
@@ -92,6 +99,8 @@ const App: React.FC = () => {
         setForceBatchRefresh={setForceBatchRefresh}
         userEmail={userEmail}
         setUserEmail={setUserEmail}
+        boardId={boardId}
+        setBoardId={setBoardId}
       />
     </div>
   );

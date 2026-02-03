@@ -5,6 +5,8 @@ from typing import Optional, List
 class ChatRequest(BaseModel):
     """聊天请求模型"""
     mock: Optional[bool] = False
+    # 默认plum的board，可以通过前端设置调整
+    board_id: Optional[str] = "3485"
     user_email: Optional[str] = "chuan.huang@veeva.com"
     jira_id: Optional[str] = None
     get_all_work_logs: Optional[bool] = False
