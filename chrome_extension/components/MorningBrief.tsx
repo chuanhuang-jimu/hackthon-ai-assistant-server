@@ -19,12 +19,23 @@ interface MorningBriefData {
   items: SmartInfo[];
 }
 
+interface TodoItem {
+  id: string;
+  title: string;
+  summary?: string;
+  source: 'email' | 'manual';
+  sourceId?: string;
+  completed: boolean;
+}
+
 const API_ENDPOINTS = {
   READ_EMAIL: 'http://127.0.0.1:8200/api/gemini/email/read'
 };
 
-const CACHE_KEY = 'emailQuickReadCache';
+const REDIS_BASE_URL = 'http://localhost:7379';
 const PROCESSED_IDS_KEY = 'emailProcessedIds';
+const TODO_ITEMS_KEY = 'todoItems';
+const CACHE_KEY = 'emailQuickReadCache';
 const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 interface CachedData {
@@ -39,6 +50,11 @@ const EmailQuickRead: React.FC = () => {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [processedItemIds, setProcessedItemIds] = useState<string[]>([]);
   const [isProcessedCollapsed, setIsProcessedCollapsed] = useState(true);
+  const [isTodoCollapsed, setIsTodoCollapsed] = useState(false);
+  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
+  const [newTodoText, setNewTodoText] = useState('');
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [editingTodoText, setEditingTodoText] = useState('');
 
   const mockFullData: MorningBriefData = {
     "ai_summary": "周日好！自上周五以来，共有 11 项高优先级动态，其中 Jira 上有 3 项提及或分配，GitLab 有 7 项 Code Review 相关通知，Wiki 上有 1 项 @提及。此外还有一些Jira任务的状态更新和Confluence页面编辑的通知。",
@@ -48,6 +64,29 @@ const EmailQuickRead: React.FC = () => {
       { "id": "9424", "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 14:38", "source_label": "GitLab", "icon_type": "email", "summary": "GitLab上关于PR #34202的Code Review，主要涉及健壮性改进。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c417" },
       { "id": "9408", "title": "Re: chinasfa | ORI-135104 feat: allow overriding metadata reference condition via page layout config (!34148)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 11:26", "source_label": "GitLab", "icon_type": "email", "summary": "GitLab上关于PR #34148的Code Review，实现通过页面布局配置覆盖元数据引用条件。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c418" }
     ]
+  };
+  const fetchFromRedis = async (key: string) => {
+    try {
+      const response = await fetch(`${REDIS_BASE_URL}/GET/${key}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.GET ? JSON.parse(data.GET) : null;
+    } catch (error) {
+      console.error(`Failed to fetch ${key} from Redis:`, error);
+      return null;
+    }
+  };
+  
+  const saveToRedis = async (key: string, value: any) => {
+    try {
+      const stringifiedValue = JSON.stringify(value);
+      // It seems the API expects the value in the URL path.
+      // The value must be URI encoded to handle special characters in JSON.
+      const encodedValue = encodeURIComponent(stringifiedValue);
+      await fetch(`${REDIS_BASE_URL}/SET/${key}/${encodedValue}`);
+    } catch (error) {
+      console.error(`Failed to save ${key} to Redis:`, error);
+    }
   };
 
   const tryExtractJson = (str: string) => {
@@ -87,11 +126,11 @@ const EmailQuickRead: React.FC = () => {
       
       if (newData) {
         setData(newData);
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: newData, timestamp: new Date().getTime() }));
+        saveToRedis(CACHE_KEY, { data: newData, timestamp: new Date().getTime() });
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      if (!data) setData(mockFullData);
+      setData(prevData => prevData || mockFullData);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -99,28 +138,38 @@ const EmailQuickRead: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const savedProcessedIds = localStorage.getItem(PROCESSED_IDS_KEY);
-    if (savedProcessedIds) {
-      setProcessedItemIds(JSON.parse(savedProcessedIds));
-    }
-    
-    const cachedItem = localStorage.getItem(CACHE_KEY);
-    if (cachedItem) {
-      try {
-        const cache: CachedData = JSON.parse(cachedItem);
-        const isCacheStale = (new Date().getTime() - cache.timestamp) > CACHE_DURATION_MS;
-        
-        setData(cache.data);
-        setLoading(false);
+    const loadInitialData = async () => {
+      const [processed, todos, cachedItem] = await Promise.all([
+        fetchFromRedis(PROCESSED_IDS_KEY),
+        fetchFromRedis(TODO_ITEMS_KEY),
+        fetchFromRedis(CACHE_KEY)
+      ]);
 
-        if (isCacheStale) fetchData(true);
-      } catch (e) {
-        console.error("Failed to parse cache", e);
+      if (processed) setProcessedItemIds(processed);
+      if (todos) setTodoItems(todos);
+
+      if (cachedItem) {
+        try {
+          const cache: CachedData = cachedItem;
+          const isCacheStale = (new Date().getTime() - cache.timestamp) > CACHE_DURATION_MS;
+          
+          setData(cache.data);
+          setLoading(false);
+  
+          if (isCacheStale) {
+            fetchData(true);
+          }
+        } catch (e) {
+          console.error("Failed to parse cache", e);
+          fetchData();
+        }
+      } else {
         fetchData();
       }
-    } else {
-      fetchData();
-    }
+    };
+
+    loadInitialData();
+    
   }, [fetchData]);
 
   const { unprocessedItems, processedItems } = useMemo(() => {
@@ -143,13 +192,79 @@ const EmailQuickRead: React.FC = () => {
     return { unprocessedItems: unprocessed, processedItems: processed };
   }, [data, processedItemIds]);
 
+  const updateTodoItems = (newItems: TodoItem[]) => {
+    setTodoItems(newItems);
+    saveToRedis(TODO_ITEMS_KEY, newItems);
+  };
+
+  const addTodoFromEmail = (item: SmartInfo) => {
+    const newTodo: TodoItem = {
+      id: `todo-${Date.now()}`,
+      title: item.title,
+      summary: item.summary,
+      source: 'email',
+      sourceId: item.id,
+      completed: false,
+    };
+    updateTodoItems([...todoItems, newTodo]);
+  };
+
+  const handleManualTodoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTodoText.trim()) return;
+    const newTodo: TodoItem = {
+      id: `todo-${Date.now()}`,
+      title: newTodoText,
+      source: 'manual',
+      completed: false,
+    };
+    updateTodoItems([...todoItems, newTodo]);
+    setNewTodoText('');
+  };
+
+  const toggleTodoCompleted = (todoId: string) => {
+    const newItems = todoItems.map(item =>
+      item.id === todoId ? { ...item, completed: !item.completed } : item
+    );
+    updateTodoItems(newItems);
+  };
+
+  const removeTodoItem = (todoId: string) => {
+    const newItems = todoItems.filter(item => item.id !== todoId);
+    updateTodoItems(newItems);
+  };
+
+  const handleStartEdit = (todo: TodoItem) => {
+    setEditingTodoId(todo.id);
+    setEditingTodoText(todo.title);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingTodoId) return;
+    const newItems = todoItems.map(item =>
+      item.id === editingTodoId ? { ...item, title: editingTodoText } : item
+    );
+    updateTodoItems(newItems);
+    setEditingTodoId(null);
+    setEditingTodoText('');
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      setEditingTodoId(null);
+      setEditingTodoText('');
+    }
+  };
+
   const handleSetProcessed = (itemId: string, process = true) => {
     const newProcessedIds = process
       ? [...processedItemIds, itemId]
       : processedItemIds.filter(id => id !== itemId);
     
     setProcessedItemIds(newProcessedIds);
-    localStorage.setItem(PROCESSED_IDS_KEY, JSON.stringify(newProcessedIds));
+    saveToRedis(PROCESSED_IDS_KEY, newProcessedIds);
     if (process) {
       setExpandedItemId(null);
     }
@@ -205,6 +320,8 @@ const EmailQuickRead: React.FC = () => {
     setExpandedItemId(prevId => (prevId === itemId ? null : itemId));
   };
   
+  const isEmailInTodo = (emailId: string) => todoItems.some(todo => todo.source === 'email' && todo.sourceId === emailId);
+
   const renderItem = (item: SmartInfo, isProcessed: boolean) => (
     <div key={item.id} className={isProcessed ? 'filter grayscale opacity-70' : ''}>
       <div 
@@ -243,7 +360,7 @@ const EmailQuickRead: React.FC = () => {
       {expandedItemId === item.id && (
         <div className="p-4 pt-0 pl-16 bg-slate-50 border-t border-slate-100">
           {item.summary && <p className="text-sm text-slate-600 mb-3">{item.summary}</p>}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {item.gmail_link && (
               <a 
                 href={item.gmail_link} 
@@ -270,6 +387,19 @@ const EmailQuickRead: React.FC = () => {
               <i className={`fa-solid ${isProcessed ? 'fa-undo' : 'fa-check'} mr-2`}></i>
               {isProcessed ? '撤销处理' : '标记为已处理'}
             </button>
+            {!isProcessed && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addTodoFromEmail(item);
+                }}
+                disabled={isEmailInTodo(item.id)}
+                className="inline-flex items-center px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-purple-200 bg-purple-50 text-purple-600 hover:bg-purple-100"
+              >
+                <i className="fa-solid fa-calendar-plus mr-2"></i>
+                {isEmailInTodo(item.id) ? '已加入' : '加入待办'}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -345,6 +475,81 @@ const EmailQuickRead: React.FC = () => {
                 <p className="p-12 text-sm text-slate-400 text-center italic">所有动态都已处理完毕！</p>
             )}
           </div>
+        </div>
+
+        {/* --- 待办事项区域 --- */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div 
+            className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors"
+            onClick={() => setIsTodoCollapsed(!isTodoCollapsed)}
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-600">待办事项</h3>
+              <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                {todoItems.filter(i => !i.completed).length}
+              </span>
+            </div>
+            <i className={`fa-solid fa-chevron-down text-xs text-slate-400 transition-transform ${isTodoCollapsed ? '' : 'rotate-180'}`}></i>
+          </div>
+          {!isTodoCollapsed && (
+            <div className="divide-y divide-slate-100">
+              <div className="p-4">
+                <form onSubmit={handleManualTodoSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newTodoText}
+                    onChange={(e) => setNewTodoText(e.target.value)}
+                    placeholder="添加新的待办事项..."
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
+                  />
+                  <button type="submit" className="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg text-sm hover:bg-purple-600 transition-colors disabled:opacity-50" disabled={!newTodoText.trim()}>
+                    添加
+                  </button>
+                </form>
+              </div>
+              {todoItems.length > 0 ? (
+                todoItems.map(todo => (
+                  <div key={todo.id} className="p-4 flex items-start gap-4 group">
+                    <input 
+                      type="checkbox"
+                      checked={todo.completed}
+                      onChange={() => toggleTodoCompleted(todo.id)}
+                      className="w-5 h-5 rounded-md border-slate-300 text-purple-500 focus:ring-purple-400 mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
+                       {editingTodoId === todo.id ? (
+                         <input
+                           type="text"
+                           value={editingTodoText}
+                           onChange={(e) => setEditingTodoText(e.target.value)}
+                           onBlur={handleSaveEdit}
+                           onKeyDown={handleEditKeyDown}
+                           className="w-full px-2 py-1 border border-purple-300 rounded-md text-sm"
+                           autoFocus
+                         />
+                       ) : (
+                         <p 
+                           className={`text-sm text-slate-700 cursor-pointer ${todo.completed ? 'line-through text-slate-400' : 'font-medium'}`}
+                           onDoubleClick={() => handleStartEdit(todo)}
+                         >
+                           {todo.title}
+                         </p>
+                       )}
+                       {todo.summary && <p className="text-xs text-slate-500 mt-1">{todo.summary}</p>}
+                       {todo.source === 'email' && (
+                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 inline-block">来自邮件</span>
+                       )}
+                    </div>
+                    <button onClick={() => removeTodoItem(todo.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <i className="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="p-8 text-sm text-slate-400 text-center italic">没有待办事项。</p>
+              )}
+            </div>
+          )}
         </div>
         
         {processedItems.length > 0 && (
