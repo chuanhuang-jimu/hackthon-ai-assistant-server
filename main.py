@@ -3,7 +3,6 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from gemini_client import gemini_client
-from gemini_session_simple import get_session
 from jira_story_process import router as jira_router
 from models import ChatRequest, ChatResponse, SessionStartRequest
 
