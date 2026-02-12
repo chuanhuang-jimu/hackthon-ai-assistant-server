@@ -338,7 +338,6 @@ class GeminiCLIClient:
             
             env = self._get_enhanced_env()
             
-            # 使用 asyncio 创建异步子进程
             import asyncio
             process = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -350,7 +349,6 @@ class GeminiCLIClient:
             )
             
             try:
-                # 设置超时
                 stdout_data, stderr_data = await asyncio.wait_for(
                     process.communicate(input=message.encode()),
                     timeout=300
@@ -382,71 +380,72 @@ class GeminiCLIClient:
                 "return_code": return_code
             }
             
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "response": "",
-                        "error": str(e),
-                        "return_code": -1
-                    }
-        
-            async def async_chat_with_args(self, message: str, args: list) -> Dict[str, Any]:
-                """
-                使用自定义参数列表异步调用 gemini-cli
-                """
-                try:
-                    cmd = [self.cli_path] + args
-                    env = self._get_enhanced_env()
-                    
-                    import asyncio
-                    process = await asyncio.create_subprocess_exec(
-                        *cmd,
-                        stdin=asyncio.subprocess.PIPE,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
-                        env=env,
-                        cwd=os.getcwd()
-                    )
-                    
-                    try:
-                        stdout_data, stderr_data = await asyncio.wait_for(
-                            process.communicate(input=message.encode()),
-                            timeout=300
-                        )
-                    except asyncio.TimeoutExpired:
-                        process.kill()
-                        return {
-                            "success": False,
-                            "response": "",
-                            "error": "Command timeout after 300 seconds",
-                            "return_code": -1
-                        }
-        
-                    stdout = stdout_data.decode()
-                    stderr = stderr_data.decode()
-                    return_code = process.returncode
-                    
-                    error_msg, info_logs = self._parse_stderr(stderr)
-                    if return_code != 0 and not error_msg:
-                        error_msg = stderr.strip() if stderr else "Command failed with non-zero exit code"
-                    
-                    return {
-                        "success": return_code == 0,
-                        "response": stdout.strip() if stdout else "",
-                        "error": error_msg,
-                        "logs": info_logs,
-                        "return_code": return_code
-                    }
-                    
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "response": "",
-                        "error": str(e),
-                        "return_code": -1
-                    }
-        
-            def chat_with_args(self, message: str, args: list) -> Dict[str, Any]:        """
+        except Exception as e:
+            return {
+                "success": False,
+                "response": "",
+                "error": str(e),
+                "return_code": -1
+            }
+
+    async def async_chat_with_args(self, message: str, args: list) -> Dict[str, Any]:
+        """
+        使用自定义参数列表异步调用 gemini-cli
+        """
+        try:
+            cmd = [self.cli_path] + args
+            env = self._get_enhanced_env()
+            
+            import asyncio
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                cwd=os.getcwd()
+            )
+            
+            try:
+                stdout_data, stderr_data = await asyncio.wait_for(
+                    process.communicate(input=message.encode()),
+                    timeout=300
+                )
+            except asyncio.TimeoutExpired:
+                process.kill()
+                return {
+                    "success": False,
+                    "response": "",
+                    "error": "Command timeout after 300 seconds",
+                    "return_code": -1
+                }
+
+            stdout = stdout_data.decode()
+            stderr = stderr_data.decode()
+            return_code = process.returncode
+            
+            error_msg, info_logs = self._parse_stderr(stderr)
+            if return_code != 0 and not error_msg:
+                error_msg = stderr.strip() if stderr else "Command failed with non-zero exit code"
+            
+            return {
+                "success": return_code == 0,
+                "response": stdout.strip() if stdout else "",
+                "error": error_msg,
+                "logs": info_logs,
+                "return_code": return_code
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "response": "",
+                "error": str(e),
+                "return_code": -1
+            }
+
+    def chat_with_args(self, message: str, args: list) -> Dict[str, Any]:
+        """
         使用自定义参数列表调用 gemini-cli
         
         Args:
@@ -458,8 +457,6 @@ class GeminiCLIClient:
         """
         try:
             cmd = [self.cli_path] + args
-            
-            # 使用增强的环境变量，确保包含 Docker 等必要路径
             env = self._get_enhanced_env()
             
             process = subprocess.run(
@@ -469,17 +466,14 @@ class GeminiCLIClient:
                 stderr=subprocess.PIPE,
                 text=True,
                 cwd=os.getcwd(),
-                env=env,  # 使用增强的环境变量
+                env=env,
                 timeout=300
             )
             
             stdout = process.stdout
             stderr = process.stderr
             
-            # 解析 stderr，区分错误和信息性消息
             error_msg, info_logs = self._parse_stderr(stderr)
-            
-            # 如果返回码不为0，即使没有明确的错误消息，也认为有错误
             if process.returncode != 0 and not error_msg:
                 error_msg = stderr.strip() if stderr else "Command failed with non-zero exit code"
             
@@ -487,7 +481,7 @@ class GeminiCLIClient:
                 "success": process.returncode == 0,
                 "response": stdout.strip() if stdout else "",
                 "error": error_msg,
-                "logs": info_logs,  # 信息性日志
+                "logs": info_logs,
                 "return_code": process.returncode
             }
             
