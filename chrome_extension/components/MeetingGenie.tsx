@@ -455,47 +455,30 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
 
         
 
-          const handleBatchRefresh = async () => {
+  const handleBatchRefresh = async () => {
+    setIsBatchRefreshing(true);
+    setError(null);
+    try {
+      // 1. 筛选出真正需要分析的任务（没缓存或强制刷新）
+      const storiesToAnalyze = stories.filter(story => {
+        const cache = getValidCache(story.key);
+        return forceBatchRefresh || !cache || (Date.now() - cache.timestamp) > 48 * 60 * 60 * 1000;
+      });
 
+      // 2. 分批处理，每批 5 个
+      const CHUNK_SIZE = 5;
+      for (let i = 0; i < storiesToAnalyze.length; i += CHUNK_SIZE) {
+        const chunk = storiesToAnalyze.slice(i, i + CHUNK_SIZE);
         
-
-            setIsBatchRefreshing(true);
-
+        // 并发发起当前批次的请求
+        // 使用 Promise.allSettled 确保即便其中某个请求失败，也不会中断整批或后续批次
+        await Promise.allSettled(
+          chunk.map(story => handleSmartAnalysis(story.key))
+        );
         
-
-            setError(null);
-
-        
-
-            try {
-
-        
-
-              for (const story of stories) {
-
-        
-
-                const cache = getValidCache(story.key);
-
-        
-
-                if (forceBatchRefresh || !cache || (Date.now() - cache.timestamp) > 48 * 60 * 60 * 1000) {
-
-        
-
-                  await handleSmartAnalysis(story.key);
-
-        
-
-                }
-
-        
-
-              }
-
-        
-
-            } catch (error) {
+        console.log(`Batch ${Math.floor(i / CHUNK_SIZE) + 1} completed.`);
+      }
+    } catch (error) {
       console.error("Batch refresh failed:", error);
       setError("批量刷新过程中断，请稍后重试。");
     } finally {
