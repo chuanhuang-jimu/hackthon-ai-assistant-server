@@ -29,7 +29,7 @@ async def chat_with_gemini(request: ChatRequest):
     try:
         # 如果提供了自定义参数，使用 chat_with_args
         if request.args:
-            result = gemini_client.chat_with_args(request.message, request.args)
+            result = await gemini_client.async_chat_with_args(request.message, request.args)
         else:
             # 构建 kwargs
             kwargs = {}
@@ -46,7 +46,7 @@ async def chat_with_gemini(request: ChatRequest):
                 approval_mode = "yolo"
                 kwargs["approval_mode"] = approval_mode
 
-            result = gemini_client.chat(
+            result = await gemini_client.async_chat(
                 request.message,
                 model=request.model,
                 mcp_servers=request.mcp_servers,
@@ -104,7 +104,7 @@ async def read_email(
                 "approval_mode": "yolo"
             }
 
-            result = gemini_client.chat(
+            result = await gemini_client.async_chat(
                 prompt,
                 model=model,
                 mcp_servers=['mail'],
