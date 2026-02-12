@@ -87,13 +87,13 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
 
   const [stories, setStories] = useState<JiraStory[]>([]);
 
-  const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+    const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
 
-  const [analyzingKey, setAnalyzingKey] = useState<string | null>(null);
+    const [analyzingKeys, setAnalyzingKeys] = useState<Record<string, boolean>>({});
 
-  const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
   const [rules, setRules] = useState<TagRule[]>([]);
 
@@ -419,103 +419,35 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
 
         
 
-          const handleSmartAnalysis = async (jiraId: string) => {
-
-        
-
-            setAnalyzingKey(jiraId);
-
-        
-
-            try {
-
-        
-
-              const response = await fetchWithBoardId('http://127.0.0.1:8200/api/gemini/story/check', {
-
-        
-
-                method: 'POST',
-
-        
-
-                headers: { 'Content-Type': 'application/json' },
-
-        
-
-                body: JSON.stringify({
-
-        
-
-                  jira_id: jiraId,
-
-        
-
-                  get_all_work_logs: getAllWorkLogs,
-
-        
-
-                  mock: isMock
-
-        
-
-                }),
-
-        
-
-              });
-
-        
-
-              const data = await response.json();
-
-        
-
-              const now = Date.now();
-
-        
-
-              localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({
-
-        
-
-                content: data.response || "分析完成。",
-
-        
-
-                expiry: now + 48 * 60 * 60 * 1000,
-
-        
-
-                timestamp: now
-
-        
-
-              }));
-
-        
-
-            } catch (err: any) {
-
-        
-
-              console.error(err);
-
-        
-
-            } finally {
-
-        
-
-              setAnalyzingKey(null);
-
-        
-
-            }
-
-        
-
-          };
+  const handleSmartAnalysis = async (jiraId: string) => {
+    setAnalyzingKeys(prev => ({ ...prev, [jiraId]: true }));
+    try {
+      const response = await fetchWithBoardId('http://127.0.0.1:8200/api/gemini/story/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jira_id: jiraId,
+          get_all_work_logs: getAllWorkLogs,
+          mock: isMock
+        }),
+      });
+      const data = await response.json();
+      const now = Date.now();
+      localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({
+        content: data.response || "分析完成。",
+        expiry: now + 48 * 60 * 60 * 1000,
+        timestamp: now
+      }));
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setAnalyzingKeys(prev => {
+        const newState = { ...prev };
+        delete newState[jiraId];
+        return newState;
+      });
+    }
+  };
 
         
 
@@ -695,7 +627,7 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
                         setShowModal(true);
                       }
                     }} className="flex items-center justify-center w-9 h-9 bg-sky-50 text-sky-600 rounded-xl hover:bg-sky-100 border border-sky-100 transition-all hover:scale-105 active:scale-95"><i className="fa-solid fa-eye text-sm"></i></button>}
-                    <button onClick={() => handleSmartAnalysis(story.key)} disabled={analyzingKey === story.key} className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${analyzingKey === story.key ? 'bg-slate-100 text-slate-300' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-100 hover:scale-105 active:scale-95'}`}>{analyzingKey === story.key ? <i className="fa-solid fa-spinner fa-spin text-xs"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}</button>
+                    <button onClick={() => handleSmartAnalysis(story.key)} disabled={!!analyzingKeys[story.key]} className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${analyzingKeys[story.key] ? 'bg-slate-100 text-slate-300' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-100 hover:scale-105 active:scale-95'}`}>{analyzingKeys[story.key] ? <i className="fa-solid fa-spinner fa-spin text-xs"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}</button>
                   </div>
                 </div>
               );
