@@ -117,23 +117,11 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
 
   const ANALYSIS_PREFIX = 'jira_analysis_';
 
-  const JIRA_BASE_URL = 'https://jira.veevadev.com/browse';
+    const JIRA_BASE_URL = 'https://jira.veevadev.com/browse';
 
+  
 
-
-  const getEndOfToday = () => {
-
-    const now = new Date();
-
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-    return end.getTime();
-
-  };
-
-
-
-  const formatTime = (ts: number) => {
+    const formatTime = (ts: number) => {
 
     const d = new Date(ts);
 
@@ -367,99 +355,215 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
 
         
 
-        setStories(finalData);
-
-        setLastSyncTime(now);
+                setStories(finalData);
 
         
 
-        localStorage.setItem(BOARD_CACHE_KEY, JSON.stringify({ 
+                setLastSyncTime(now);
 
-          data: finalData, 
+        
 
-          timestamp: now,
+                
 
-          expiry: getEndOfToday() 
+        
 
-        }));
+                localStorage.setItem(BOARD_CACHE_KEY, JSON.stringify({ 
 
-      }
+        
 
-    } catch (err: any) {
+                  data: finalData, 
 
-      setError(err.message || "同步失败");
+        
 
-    } finally {
+                  timestamp: now,
 
-      setLoading(false);
+        
 
-    }
+                  expiry: now + 7 * 24 * 60 * 60 * 1000 
 
-  };
+        
 
+                }));
 
+        
 
-  const handleSmartAnalysis = async (jiraId: string) => {
+              }
 
-    setAnalyzingKey(jiraId);
+        
 
-    try {
+            } catch (err: any) {
 
-      const response = await fetchWithBoardId('http://127.0.0.1:8200/api/gemini/story/check', {
+        
 
-        method: 'POST',
+              setError(err.message || "同步失败");
 
-        headers: { 'Content-Type': 'application/json' },
+        
 
-        body: JSON.stringify({
+            } finally {
 
-          jira_id: jiraId,
+        
 
-          get_all_work_logs: getAllWorkLogs,
+              setLoading(false);
 
-          mock: isMock
+        
 
-        }),
+            }
 
-      });
+        
 
-      const data = await response.json();
+          };
 
-      // 分析结果也可以考虑 end-of-day 过期
+        
 
-            localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({
+        
 
-              content: data.response || "分析完成。",
+        
 
-              expiry: getEndOfToday(),
+          const handleSmartAnalysis = async (jiraId: string) => {
 
-              timestamp: Date.now() // Add this line
+        
 
-            }));
+            setAnalyzingKey(jiraId);
 
-    } catch (err: any) {
+        
 
-      console.error(err);
+            try {
 
-    } finally {
+        
 
-      setAnalyzingKey(null);
+              const response = await fetchWithBoardId('http://127.0.0.1:8200/api/gemini/story/check', {
 
-    }
+        
 
-  };
+                method: 'POST',
 
-  const handleBatchRefresh = async () => {
-    setIsBatchRefreshing(true);
-    setError(null);
-    try {
-      for (const story of stories) {
-        const cache = getValidCache(story.key);
-        if (forceBatchRefresh || !cache || (Date.now() - cache.timestamp) > 6 * 60 * 60 * 1000) {
-          await handleSmartAnalysis(story.key);
-        }
-      }
-    } catch (error) {
+        
+
+                headers: { 'Content-Type': 'application/json' },
+
+        
+
+                body: JSON.stringify({
+
+        
+
+                  jira_id: jiraId,
+
+        
+
+                  get_all_work_logs: getAllWorkLogs,
+
+        
+
+                  mock: isMock
+
+        
+
+                }),
+
+        
+
+              });
+
+        
+
+              const data = await response.json();
+
+        
+
+              const now = Date.now();
+
+        
+
+              localStorage.setItem(`${ANALYSIS_PREFIX}${jiraId}`, JSON.stringify({
+
+        
+
+                content: data.response || "分析完成。",
+
+        
+
+                expiry: now + 48 * 60 * 60 * 1000,
+
+        
+
+                timestamp: now
+
+        
+
+              }));
+
+        
+
+            } catch (err: any) {
+
+        
+
+              console.error(err);
+
+        
+
+            } finally {
+
+        
+
+              setAnalyzingKey(null);
+
+        
+
+            }
+
+        
+
+          };
+
+        
+
+        
+
+        
+
+          const handleBatchRefresh = async () => {
+
+        
+
+            setIsBatchRefreshing(true);
+
+        
+
+            setError(null);
+
+        
+
+            try {
+
+        
+
+              for (const story of stories) {
+
+        
+
+                const cache = getValidCache(story.key);
+
+        
+
+                if (forceBatchRefresh || !cache || (Date.now() - cache.timestamp) > 48 * 60 * 60 * 1000) {
+
+        
+
+                  await handleSmartAnalysis(story.key);
+
+        
+
+                }
+
+        
+
+              }
+
+        
+
+            } catch (error) {
       console.error("Batch refresh failed:", error);
       setError("批量刷新过程中断，请稍后重试。");
     } finally {
@@ -551,7 +655,7 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">当前活跃: {stories.length} 个任务 (今日内有效)</p>
+                <p className="text-[10px] text-slate-400 font-medium">当前活跃: {stories.length} 个任务 (7天内有效)</p>
               </div>
             </div>
             <div className="flex items-end gap-3">

@@ -1,144 +1,89 @@
-# Personal Assistant API
+# Streamline (工作助手·Pro) - 基于 Gemini 的全能 AI 智能工作助理
 
-基于 FastAPI 的个人助手 API 项目。
+**Streamline** 是一款旨在消除开发者与管理人员在日常工作中“信息碎化”与“管理内耗”的 AI 办公套件。它以 **Chrome Extension** 为入口，深度集成 Jira、GitLab、Wiki 和 Gmail，利用 Google Gemini 模型和 MCP (Model Context Protocol) 协议提供智能化的工作流辅助。
 
-## 安装依赖
+---
 
-```bash
-pip install -r requirements.txt
-```
+## 🌟 核心功能
 
-## 运行项目
+### 1. 晨间速览 (Morning Brief)
+- **智能过滤**：自动抓取多渠道信息（Jira, Wiki, GitLab, Email），AI 智能过滤“与你有关”的内容。
+- **动态提醒**：实时同步外部工作流，标记“高优”与“@提及”事项。
+- **一键待办**：支持将关键邮件或通知直接转化为本地待办清单 (Todo List)。
 
-```bash
-uvicorn main:app --reload
-```
+### 2. 今日总结 (Daily Summary)
+- **无感工时记录**：自动拉取个人名下进行中的 Jira 任务，支持在同一界面批量填写工时 (Worklog) 与进度备注。
+- **进度可视化**：实时同步 Jira 状态，计算任务 Logged/Remaining 比例，一键完成同步。
 
-服务启动后，访问：
-- API 文档：http://localhost:8200/docs
-- 替代文档：http://localhost:8200/redoc
-- Hello World 接口：http://localhost:8200/
+### 3. AI 项目经理 (Meeting Genie / Scrum Master)
+- **标签引擎**：基于 Redis 存储的可配置规则，自动识别任务风险（如：延期风险、阻塞风险）。
+- **智能分析报告**：AI 深度阅读 Story 下的所有评论与子任务进展，生成一键式分析摘要，显著缩短早会同步时间。
+- **看板同步**：一键同步活跃 Sprint 的所有 Story 状态。
 
-## API 接口
+---
 
-### 基础接口
-- `GET /` - Hello World 接口
-- `GET /hello` - Hello 接口
+## 🛠️ 技术架构
 
-### Gemini CLI 接口
-- `POST /api/gemini/chat` - 与本地 gemini-cli 交互
-  - 请求体示例：
-    ```json
-    {
-      "message": "你好，请介绍一下你自己",
-      "model": "gemini-pro",
-      "temperature": 0.7,
-      "max_tokens": 1000
-    }
-    ```
-  - 使用 MCP 服务器：
-    ```json
-    {
-      "message": "查询 JIRA 任务",
-      "mcp_servers": ["jira", "geminix"]
-    }
-    ```
-    - 如果不指定 `mcp_servers`，将自动使用 `~/.gemini/settings.json` 中配置的所有 MCP 服务器
-    - 如果指定了 `mcp_servers`，只使用指定的服务器
-  - 或者使用自定义参数：
-    ```json
-    {
-      "message": "你好",
-      "args": ["--model", "gemini-pro", "--temperature", "0.7"]
-    }
-    ```
+-   **前端**：React 19 + TypeScript + Tailwind CSS (Vite 构建，Chrome MV3 架构)
+-   **后端**：FastAPI (Python 3.10+)
+-   **AI 引擎**：Google Gemini (通过 gemini-cli 调用)
+-   **协议**：MCP (Model Context Protocol)
+-   **缓存/持久化**：Redis + Webdis (HTTP Proxy)
 
-- `GET /api/gemini/health` - 检查 gemini-cli 是否可用
-- `GET /api/gemini/mcp-servers` - 获取可用的 MCP 服务器列表（从 settings.json 读取）
+---
 
-## 使用示例
+## 🚀 部署指南
 
-### 使用 curl 调用 Gemini 接口
+### 1. 前置要求
+-   **Node.js**: v18+
+-   **Python**: v3.10+
+-   **Redis**: 必须安装并运行。
+-   **Webdis**: Redis 的 HTTP 代理，需运行在 `http://localhost:7379`。
+-   **Gemini CLI**: 必须安装 `gemini-cli` 并在系统 PATH 中。
 
-```bash
-# 简单聊天
-curl -X POST "http://localhost:8200/api/gemini/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "你好，请介绍一下你自己"
-  }'
+### 2. 后端部署 (Python API)
+1. 安装 Python 依赖：
+   ```bash
+   pip install -r requirements.txt
+   ```
+2启动 API 服务（默认端口 8200）：
+   ```bash
+   uvicorn main:app --port 8200 --reload
+   ```
 
-# 指定模型和参数
-curl -X POST "http://localhost:8200/api/gemini/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "解释一下量子计算",
-    "model": "gemini-pro",
-    "temperature": 0.7
-  }'
+### 3. 前端部署 (Chrome Extension)
+1. 进入插件目录：
+   ```bash
+   cd chrome_extension
+   ```
+2. 安装依赖并构建：
+   ```bash
+   npm install
+   npm run build
+   npm run dev
+   ```
+3. 加载扩展：
+   - 打开 Chrome 浏览器，访问 `chrome://extensions/`。
+   - 开启“开发者模式”。
+   - 点击“加载已解压的扩展程序”，选择 `chrome_extension/dist` 文件夹。
 
-# 检查 gemini-cli 状态
-curl "http://localhost:8200/api/gemini/health"
+### 4. MCP 服务配置
+确保你的 `~/.gemini/settings.json` 中配置了必要的 MCP 服务器：
+- **jira**: 用于访问 Jira 任务和工时。
+- **mail**: 用于读取 Gmail 动态（见 `mcp/mail-mcp/`）。
 
-# 查看可用的 MCP 服务器
-curl "http://localhost:8200/api/gemini/mcp-servers"
+---
 
-# 使用 MCP 服务器进行聊天
-curl -X POST "http://localhost:8200/api/gemini/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "使用 JIRA MCP 查询任务",
-    "mcp_servers": ["jira"]
-  }'
-```
+## ⚙️ 配置说明
 
-### 使用 Python 调用
+在插件的“设置 (Settings)”中，你需要配置以下信息以确保功能正常：
+-   **个人邮箱**：你的公司邮箱（如 `xxxx@veeva.com`），用于晨间分拣。
+-   **看板 ID**：Jira Board 的 ID，用于 Scrum Master 看板同步。
+-   **Mock 模式**：如果你没有连接后端，可以开启此模式预览 UI。
 
-```python
-import requests
+---
 
-# 发送消息
-response = requests.post(
-    "http://localhost:8200/api/gemini/chat",
-    json={
-        "message": "你好",
-        "model": "gemini-pro"
-    }
-)
-print(response.json())
-```
-
-## MCP 服务器支持
-
-API 支持使用 MCP (Model Context Protocol) 服务器：
-
-1. **自动加载配置**：API 会自动从 `~/.gemini/settings.json` 读取 MCP 服务器配置
-2. **使用所有服务器**：如果不指定 `mcp_servers` 参数，gemini 会自动使用 settings.json 中配置的所有服务器
-3. **指定服务器**：通过 `mcp_servers` 参数可以指定要使用的服务器名称列表
-4. **查看可用服务器**：使用 `GET /api/gemini/mcp-servers` 接口查看所有可用的 MCP 服务器
-
-### MCP 服务器配置示例
-
-在 `~/.gemini/settings.json` 中配置：
-
-```json
-{
-  "mcpServers": {
-    "geminix": {
-      "httpUrl": "http://geminix.example.com/mcp"
-    },
-    "jira": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "mcp-server-image"]
-    }
-  }
-}
-```
-
-## 注意事项
-
-1. 确保本地已安装并配置好 `gemini-cli`
-2. `gemini-cli` 需要在系统 PATH 中，或者可以通过 `GeminiCLIClient` 的 `cli_path` 参数指定路径
-3. 接口会通过 subprocess 调用本地 gemini-cli，请确保有执行权限
-4. MCP 服务器配置需要正确设置在 `~/.gemini/settings.json` 中
-5. 如果使用 Docker 类型的 MCP 服务器（如 jira），确保 Docker 已安装并可访问
+## 📖 开发者说明
+-   **后端接口文档**：访问 `http://localhost:8200/docs` 查看 Swagger UI。
+-   **Redis 数据流**：前端通过 Webdis 直接与 Redis 交互，存储风险判定逻辑与个人缓存。
+-   **MCP 集成**：项目根目录下的 `mcp/` 文件夹包含了自定义的邮件分拣工具。
