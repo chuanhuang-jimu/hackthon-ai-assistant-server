@@ -314,7 +314,82 @@ class GeminiCLIClient:
                 "error": str(e),
                 "return_code": -1
             }
-    
+
+    async def async_chat(self, message: str, model: Optional[str] = None, 
+                  mcp_servers: Optional[List[str]] = None, **kwargs) -> Dict[str, Any]:
+        """
+        异步发送消息到 gemini-cli 并获取响应
+        """
+        try:
+            cmd = [self.cli_path]
+            if model:
+                cmd.extend(["--model", model])
+            if mcp_servers is not None:
+                for server_name in mcp_servers:
+                    cmd.extend(["--allowed-mcp-server-names", server_name])
+            
+            approval_mode = kwargs.pop("approval_mode", None)
+            if approval_mode:
+                cmd.extend(["--approval-mode", approval_mode])
+            
+            for key, value in kwargs.items():
+                if value is not None and key != "mcp_servers":
+                    cmd.extend([f"--{key.replace('_', '-')}", str(value)])
+            
+            env = self._get_enhanced_env()
+            
+            # 使用 asyncio 创建异步子进程
+            import asyncio
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                cwd=os.getcwd()
+            )
+            
+            try:
+                # 设置超时
+                stdout_data, stderr_data = await asyncio.wait_for(
+                    process.communicate(input=message.encode()),
+                    timeout=300
+                )
+            except asyncio.TimeoutExpired:
+                process.kill()
+                return {
+                    "success": False,
+                    "response": "",
+                    "error": "Command timeout after 300 seconds",
+                    "return_code": -1
+                }
+
+            stdout = stdout_data.decode()
+            stderr = stderr_data.decode()
+            return_code = process.returncode
+            
+            error_msg, info_logs = self._parse_stderr(stderr)
+            is_success = return_code == 0 or (return_code != 0 and not error_msg)
+
+            if not is_success and not error_msg:
+                error_msg = stderr.strip() if stderr else "Command failed with non-zero exit code"
+            
+            return {
+                "success": is_success,
+                "response": stdout.strip() if stdout else "",
+                "error": error_msg,
+                "logs": info_logs,
+                "return_code": return_code
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "response": "",
+                "error": str(e),
+                "return_code": -1
+            }
+
     def chat_with_args(self, message: str, args: list) -> Dict[str, Any]:
         """
         使用自定义参数列表调用 gemini-cli

@@ -3,9 +3,9 @@ import asyncio
 
 from models import ChatResponse, ChatRequest
 from fastapi import HTTPException, APIRouter
-from analyze_data_storage import parse_to_json, get_story_description
+from analyze_data_storage import async_parse_to_json, async_get_story_description
 from gemini_client import gemini_client
-from redis_utils import query_redis, set_redis
+from redis_utils import async_query_redis, async_set_redis
 import json
 
 router = APIRouter()
@@ -16,7 +16,7 @@ async def story_description(story_id):
     """
     给浏览器油猴用的
     """
-    return get_story_description(story_id)
+    return await async_get_story_description(story_id)
 
 
 @router.post("/api/gemini/board/personal/task/processing", response_model=ChatResponse)
@@ -54,7 +54,7 @@ async def personal_task_processing(request: ChatRequest):
             kwargs = {
                 "approval_mode": "yolo"
             }
-            result = gemini_client.chat(
+            result = await gemini_client.async_chat(
                 prompt,
                 model=request.model,
                 mcp_servers=['jira'],
@@ -104,7 +104,7 @@ async def story_list(request: ChatRequest):
     delay_rules = []
     risk_rules = []
 
-    tags_data = query_redis('get', 'scrum_master_tag_rules')
+    tags_data = await async_query_redis('get', 'scrum_master_tag_rules')
     for tag in tags_data:
         if tag.get('tagName', '') == 'delay':
             delay_rules += tag.get('rules', [])
@@ -165,7 +165,7 @@ async def story_list(request: ChatRequest):
                 "approval_mode": "yolo"
             }
 
-            result = gemini_client.chat(
+            result = await gemini_client.async_chat(
                 get_jira_board_story,
                 model=request.model,
                 mcp_servers=['jira'],
@@ -194,7 +194,7 @@ async def story_list(request: ChatRequest):
                     story_tags = story.get('tags')
                     if story_key and story_tags is not None:
                         tags_redis_key = f"story:tags:{story_key}"
-                        set_redis(tags_redis_key, story_tags, expiry_seconds=expiry)
+                        await async_set_redis(tags_redis_key, story_tags, expiry_seconds=expiry)
             except json.JSONDecodeError as e:
                 print(f"Failed to parse JSON from response for redis caching: {e}")
             except Exception as e:
@@ -347,7 +347,7 @@ async def story_check(request: ChatRequest):
                 "approval_mode": "yolo"
             }
 
-            result = gemini_client.chat(
+            result = await gemini_client.async_chat(
                 jira_story_check,
                 model=request.model,
                 mcp_servers=['jira'],  # 这里的逻辑是写死的，如你所愿
@@ -360,7 +360,7 @@ async def story_check(request: ChatRequest):
             )
         print(f">>> story_check, {request.jira_id}, {result['response']}")
 
-        parse_to_json(result['response'], request.jira_id)
+        await async_parse_to_json(result['response'], request.jira_id)
         return ChatResponse(
             success=True,
             response=result["response"],
