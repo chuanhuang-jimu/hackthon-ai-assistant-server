@@ -76,7 +76,7 @@ async def chat_with_gemini(request: ChatRequest):
 async def read_email(
     message: str = "",
     model: Optional[str] = None,
-    mock: bool = False
+    mock: bool = True
 ):
     """
     与 gemini-cli 交互的接口 (Read Email 专用)
