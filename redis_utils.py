@@ -1,107 +1,108 @@
-import requests
+import redis
+import redis.asyncio as async_redis
 import json
-import httpx
+import os
+
+# Configure Redis connection - defaulting to localhost:6379
+# Note: webdis was on 7379, but standard Redis is on 6379.
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_DB = int(os.getenv("REDIS_DB", 0))
+
+# Initialize clients with decode_responses=True to handle strings automatically
+sync_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+async_client = async_redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
 
-def query_redis(method: str, key: str) -> dict:
-    url = f"http://localhost:7379/{method}/{key}"
-    data = {}
+def query_redis(method: str, key: str) -> any:
+    """
+    Query redis using the specified method (e.g., 'GET').
+    Maintains compatibility with webdis-style JSON parsing.
+    """
     try:
-        response = requests.get(url)
-        # A 404 from webdis means the key doesn't exist, which is not an error in our case.
-        if response.status_code == 404:
+        method_lower = method.lower()
+        if method_lower == 'get':
+            raw_data = sync_client.get(key)
+        else:
+            # Fallback for other Redis commands if needed
+            func = getattr(sync_client, method_lower)
+            raw_data = func(key)
+
+        if raw_data is None:
             return {}
-        response.raise_for_status()  # Raise an exception for other bad statuses (500, 403, etc.)
 
-        response_json = response.json()
-        raw_json_string = response_json.get(method)
-
-        if raw_json_string and isinstance(raw_json_string, str):
+        if isinstance(raw_data, str):
             try:
-                data = json.loads(raw_json_string)
-            except json.JSONDecodeError:
-                data = raw_json_string
-        # If the key exists but the value is not a string (e.g. Redis list),
-        # webdis might return it directly as a JSON array.
-        elif raw_json_string and isinstance(raw_json_string, list):
-             data = raw_json_string
+                # Attempt to parse JSON if it looks like it
+                if (raw_data.startswith('{') and raw_data.endswith('}')) or \
+                   (raw_data.startswith('[') and raw_data.endswith(']')):
+                    return json.loads(raw_data)
+                return raw_data
+            except (json.JSONDecodeError, TypeError):
+                return raw_data
+        return raw_data
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error querying redis key '{key}': {e}")
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from redis for key '{key}': {e}. Response was: {response.text}")
     except Exception as e:
-        # Catch any other unexpected errors
-        print(f"An unexpected error occurred in query_redis for key '{key}': {e}")
-
-    return data
+        print(f"Error querying redis key '{key}' with method '{method}': {e}")
+        return {}
 
 
-async def async_query_redis(method: str, key: str) -> dict:
-    url = f"http://localhost:7379/{method}/{key}"
-    data = {}
+async def async_query_redis(method: str, key: str) -> any:
+    """
+    Asynchronously query redis using the specified method.
+    """
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            if response.status_code == 404:
-                return {}
-            response.raise_for_status()
+        method_lower = method.lower()
+        if method_lower == 'get':
+            raw_data = await async_client.get(key)
+        else:
+            func = getattr(async_client, method_lower)
+            raw_data = await func(key)
 
-            response_json = response.json()
-            raw_json_string = response_json.get(method)
+        if raw_data is None:
+            return {}
 
-            if raw_json_string and isinstance(raw_json_string, str):
-                try:
-                    data = json.loads(raw_json_string)
-                except json.JSONDecodeError:
-                    data = raw_json_string
-            elif raw_json_string and isinstance(raw_json_string, list):
-                 data = raw_json_string
+        if isinstance(raw_data, str):
+            try:
+                if (raw_data.startswith('{') and raw_data.endswith('}')) or \
+                   (raw_data.startswith('[') and raw_data.endswith(']')):
+                    return json.loads(raw_data)
+                return raw_data
+            except (json.JSONDecodeError, TypeError):
+                return raw_data
+        return raw_data
 
-    except httpx.HTTPError as e:
-        print(f"Error querying redis key '{key}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred in async_query_redis for key '{key}': {e}")
-
-    return data
+        return {}
 
 
 def set_redis(key: str, value, expiry_seconds: int = None) -> None:
-    if not isinstance(value, str):
-        value_str = json.dumps(value)
-    else:
-        value_str = value
-
-    command = "SET"
-    url = f"http://localhost:7379/{command}/{key}"
-    
-    if expiry_seconds:
-        # For SETEX, webdis seems to use path parameters for seconds
-        url = f"http://localhost:7379/SETEX/{key}/{expiry_seconds}"
-
+    """
+    Set a redis key with an optional expiry.
+    Automatically serializes non-string values to JSON.
+    """
     try:
-        # Use the data parameter to send the value in the request body
-        response = requests.put(url, data=value_str)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
+        if not isinstance(value, (str, bytes, int, float)):
+            value_str = json.dumps(value)
+        else:
+            value_str = value
+
+        sync_client.set(key, value_str, ex=expiry_seconds)
+    except Exception as e:
         print(f"Error setting redis key '{key}': {e}")
 
 
 async def async_set_redis(key: str, value, expiry_seconds: int = None) -> None:
-    if not isinstance(value, str):
-        value_str = json.dumps(value)
-    else:
-        value_str = value
-
-    command = "SET"
-    url = f"http://localhost:7379/{command}/{key}"
-    
-    if expiry_seconds:
-        url = f"http://localhost:7379/SETEX/{key}/{expiry_seconds}"
-
+    """
+    Asynchronously set a redis key with an optional expiry.
+    """
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.put(url, content=value_str)
-            response.raise_for_status()
-    except httpx.HTTPError as e:
+        if not isinstance(value, (str, bytes, int, float)):
+            value_str = json.dumps(value)
+        else:
+            value_str = value
+
+        await async_client.set(key, value_str, ex=expiry_seconds)
+    except Exception as e:
         print(f"Error setting redis key '{key}': {e}")

@@ -6,7 +6,7 @@ from gemini_client import gemini_client
 from jira_story_process import router as jira_router
 from models import ChatRequest, ChatResponse, SessionStartRequest
 
-app = FastAPI(title="Personal Assistant API", version="1.o.0")
+app = FastAPI(title="Personal Assistant API", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
