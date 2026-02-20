@@ -76,6 +76,7 @@ async def chat_with_gemini(request: ChatRequest):
 async def read_email(
     message: str = "",
     model: Optional[str] = None,
+    # todo 本地调试 @chuan.huang 后面再取消一下
     mock: bool = True
 ):
     """
