@@ -233,12 +233,14 @@ async def async_parse_to_json(text, story_id):
                 })
 
     redis_key = f"story:personal_progress:{story_id}"
-    existing_data = await async_query_redis('GET', redis_key)
+    raw_existing_data = await async_query_redis('GET', redis_key)
     
-    if not isinstance(existing_data, list):
-        final_data = []
+    if not isinstance(raw_existing_data, list):
+        existing_data = []
     else:
-        final_data = existing_data
+        existing_data = raw_existing_data
+        
+    final_data = list(existing_data) # 创建副本进行操作
 
     existing_map = {
         (item.get('User'), item.get('Jira_ID'), item.get('Date')): item
