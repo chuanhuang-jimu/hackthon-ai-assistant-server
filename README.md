@@ -67,9 +67,48 @@
    - 点击“加载已解压的扩展程序”，选择 `chrome_extension/dist` 文件夹。
 
 ### 4. MCP 服务配置
-确保你的 `~/.gemini/settings.json` 中配置了必要的 MCP 服务器：
-- **jira**: 用于访问 Jira 任务和工时。
-- **mail**: 用于读取 Gmail 动态（见 `mcp/mail-mcp/`）。
+当前项目依赖 Jira MCP 服务，请按照以下步骤配置：
+
+1. **Jira MCP 镜像拉取**：
+   ```bash
+   docker pull ghcr.io/sooperset/mcp-atlassian:latest
+   ```
+
+2. **Gemini CLI 全局配置**：
+   编辑 `~/.gemini/settings.json`（如果没有则创建），添加或修改内容如下：
+   ```json
+   {
+     "extensions": {
+       "disabled": []
+     },
+     "mcpServers": {
+       "geminix": {
+         "httpUrl": "http://geminix.crmdev.veevasfa.com/mcp"
+       },
+       "jira": {
+         "command": "docker",
+         "args": [
+           "run",
+           "-i",
+           "--rm",
+           "-e", "JIRA_URL=https://jira.veevadev.com",
+           "-e", "JIRA_USERNAME=xxx.xxx@veeva.com",
+           "-e", "JIRA_PERSONAL_TOKEN=xxxxxx",
+           "-e", "JIRA_SSL_VERIFY=false",
+           "ghcr.io/sooperset/mcp-atlassian:latest"
+         ]
+       }
+     },
+     "selectedAuthType": "oauth-personal",
+     "vimMode": true
+   }
+   ```
+   **注意**：
+   - `JIRA_USERNAME`: 请前往 [Jira 个人资料](https://jira.veevadev.com/secure/ViewProfile.jspa?selectedTab=jira.user.profile.panels:user-profile-summary-panel) 获取。
+   - `JIRA_PERSONAL_TOKEN`: 请前往 [Jira 个人访问令牌](https://jira.veevadev.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens) 创建并获取。
+
+3. **其他 MCP 服务**：
+   - **mail**: 用于读取 Gmail 动态（详见 `mcp/mail-mcp/`）。
 
 ---
 
