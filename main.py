@@ -4,7 +4,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from gemini_client import gemini_client
 from jira_story_process import router as jira_router
-from models import ChatRequest, ChatResponse, SessionStartRequest
+from models import ChatRequest, ChatResponse, SessionStartRequest, RedisSetRequest, RedisResponse
+from redis_utils import query_redis, set_redis
 
 app = FastAPI(title="Personal Assistant API", version="1.0.0")
 
@@ -293,4 +294,24 @@ async def get_session_status():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/api/redis/get", response_model=RedisResponse)
+def get_redis_key(key: str):
+    """从 Redis 读取数据"""
+    try:
+        data = query_redis("GET", key)
+        return RedisResponse(success=True, data=data)
+    except Exception as e:
+        return RedisResponse(success=False, error=str(e))
+
+
+@app.post("/api/redis/set", response_model=RedisResponse)
+def set_redis_key(request: RedisSetRequest):
+    """向 Redis 写入数据"""
+    try:
+        set_redis(request.key, request.value, request.expiry)
+        return RedisResponse(success=True)
+    except Exception as e:
+        return RedisResponse(success=False, error=str(e))
 

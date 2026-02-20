@@ -32,3 +32,17 @@ class SessionStartRequest(BaseModel):
     model: Optional[str] = None
     mcp_servers: Optional[List[str]] = None
     approval_mode: str = "yolo"
+
+
+class RedisSetRequest(BaseModel):
+    """Redis 写入请求模型"""
+    key: str
+    value: any
+    expiry: Optional[int] = None
+
+
+class RedisResponse(BaseModel):
+    """Redis 响应模型"""
+    success: bool
+    data: Optional[any] = None
+    error: Optional[str] = None

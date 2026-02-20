@@ -32,7 +32,7 @@ const API_ENDPOINTS = {
   READ_EMAIL: 'http://127.0.0.1:8200/api/gemini/email/read'
 };
 
-const REDIS_BASE_URL = 'http://localhost:7379';
+const REDIS_BASE_URL = 'http://localhost:8200/api/redis';
 const PROCESSED_IDS_KEY = 'emailProcessedIds';
 const TODO_ITEMS_KEY = 'todoItems';
 const CACHE_KEY = 'emailQuickReadCache';
@@ -61,16 +61,16 @@ const EmailQuickRead: React.FC = () => {
     "items": [
       { "id": "10447", "title": "[Confluence] Veeva Orion > Plum Retro 2026-01-16", "is_urgent": true, "is_mentioned": true, "time_text": "周五 17:50", "source_label": "Wiki", "icon_type": "email", "summary": "这是一个关于Confluence页面更新的摘要。详细内容请点击查看。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c415" },
       { "id": "10104", "title": "[JIRA] Minglei Weng mentioned you on ORI-134717 (Jira)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 17:02", "source_label": "Jira", "icon_type": "email", "summary": "您在Jira任务ORI-134717中被Minglei Weng提及。请登录Jira查看详情。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c416" },
-      { "id": "9424", "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 14:38", "source_label": "GitLab", "icon_type": "email", "summary": "GitLab上关于PR #34202的Code Review，主要涉及健壮性改进。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c417" },
-      { "id": "9408", "title": "Re: chinasfa | ORI-135104 feat: allow overriding metadata reference condition via page layout config (!34148)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 11:26", "source_label": "GitLab", "icon_type": "email", "summary": "GitLab上关于PR #34148的Code Review，实现通过页面布局配置覆盖元数据引用条件。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c418" }
+      { "id": "9424", "title": "Re: chinasfa | ORI-136228: improved robustness (!34202)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 14:38", "source_label": "GitLab", "icon_type": "email", "summary": "GitLab上关于PR #34202的Code Review，主要涉及健壮性改进。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c415" },
+      { "id": "9408", "title": "Re: chinasfa | ORI-135104 feat: allow overriding metadata reference condition via page layout config (!34148)", "is_urgent": true, "is_mentioned": true, "time_text": "周五 11:26", "source_label": "GitLab", "icon_type": "email", "summary": "GitLab上关于PR #34148的Code Review，实现通过页面布局配置覆盖元数据引用条件。", "gmail_link": "https://mail.google.com/mail/u/0/#all/19c0778c7e89c415" }
     ]
   };
   const fetchFromRedis = async (key: string) => {
     try {
-      const response = await fetch(`${REDIS_BASE_URL}/GET/${key}`);
+      const response = await fetch(`${REDIS_BASE_URL}/get?key=${key}`);
       if (!response.ok) return null;
-      const data = await response.json();
-      return data.GET ? JSON.parse(data.GET) : null;
+      const result = await response.json();
+      return result.success ? result.data : null;
     } catch (error) {
       console.error(`Failed to fetch ${key} from Redis:`, error);
       return null;
@@ -79,11 +79,13 @@ const EmailQuickRead: React.FC = () => {
   
   const saveToRedis = async (key: string, value: any) => {
     try {
-      const stringifiedValue = JSON.stringify(value);
-      // It seems the API expects the value in the URL path.
-      // The value must be URI encoded to handle special characters in JSON.
-      const encodedValue = encodeURIComponent(stringifiedValue);
-      await fetch(`${REDIS_BASE_URL}/SET/${key}/${encodedValue}`);
+      await fetch(`${REDIS_BASE_URL}/set`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ key, value }),
+      });
     } catch (error) {
       console.error(`Failed to save ${key} to Redis:`, error);
     }
