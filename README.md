@@ -63,8 +63,8 @@
    ```
 
 4. **验证与使用**：
-   - **前端预览**：访问 `http://localhost:3000` (支持代码修改后实时预览 UI)。
    - **后端 API**：访问 `http://localhost:8200/docs` 查看 Swagger 文档。
+   - **前端预览**：访问 `http://localhost:3000` (支持代码修改后实时预览 UI)。可以用下面插件，这个为验证
    - **正式插件**：插件产物位于本地 `chrome_extension/dist`。打开 Chrome `chrome://extensions/`，点击“加载已解压的扩展程序”，选择该目录即可。
    - **Redis**：映射在宿主机 `6380` 端口。
 
