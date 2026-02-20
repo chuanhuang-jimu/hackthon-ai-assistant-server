@@ -28,7 +28,7 @@
 -   **后端**：FastAPI (Python 3.10+)
 -   **AI 引擎**：Google Gemini (通过 gemini-cli 调用)
 -   **协议**：MCP (Model Context Protocol)
--   **缓存/持久化**：Redis + Webdis (HTTP Proxy)
+-   **缓存/持久化**：Redis
 
 ---
 
@@ -37,8 +37,7 @@
 ### 1. 前置要求
 -   **Node.js**: v18+
 -   **Python**: v3.10+
--   **Redis**: 必须安装并运行。
--   **Webdis**: Redis 的 HTTP 代理，需运行在 `http://localhost:7379`。
+-   **Redis**: 必须安装并运行（默认端口 6379）。
 -   **Gemini CLI**: 必须安装 `gemini-cli` 并在系统 PATH 中。
 
 ### 2. 后端部署 (Python API)
@@ -85,5 +84,5 @@
 
 ## 📖 开发者说明
 -   **后端接口文档**：访问 `http://localhost:8200/docs` 查看 Swagger UI。
--   **Redis 数据流**：前端通过 Webdis 直接与 Redis 交互，存储风险判定逻辑与个人缓存。
+-   **Redis 数据流**：前端通过后端 API 与 Redis 交互，存储风险判定逻辑与个人缓存。
 -   **MCP 集成**：项目根目录下的 `mcp/` 文件夹包含了自定义的邮件分拣工具。

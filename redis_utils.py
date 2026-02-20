@@ -4,7 +4,6 @@ import json
 import os
 
 # Configure Redis connection - defaulting to localhost:6379
-# Note: webdis was on 7379, but standard Redis is on 6379.
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
@@ -17,7 +16,6 @@ async_client = async_redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, 
 def query_redis(method: str, key: str) -> any:
     """
     Query redis using the specified method (e.g., 'GET').
-    Maintains compatibility with webdis-style JSON parsing.
     """
     try:
         method_lower = method.lower()

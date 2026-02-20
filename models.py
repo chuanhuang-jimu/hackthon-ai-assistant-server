@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
 
 
 class ChatRequest(BaseModel):
@@ -37,12 +37,12 @@ class SessionStartRequest(BaseModel):
 class RedisSetRequest(BaseModel):
     """Redis 写入请求模型"""
     key: str
-    value: any
+    value: Any
     expiry: Optional[int] = None
 
 
 class RedisResponse(BaseModel):
     """Redis 响应模型"""
     success: bool
-    data: Optional[any] = None
+    data: Optional[Any] = None
     error: Optional[str] = None
