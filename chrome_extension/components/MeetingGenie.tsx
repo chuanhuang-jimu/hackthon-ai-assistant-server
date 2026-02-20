@@ -10,239 +10,121 @@ import { fetchWithBoardId } from '../src/utils/api';
 
 
 const DEFAULT_RULES: TagRule[] = [
-
   {
-
     id: 'rule-delay',
-
     tagName: 'delay',
-
     icon: 'fa-clock',
-
     color: 'rose',
-
     description: '延期判定标准',
-
     rules: [
-
       "从 Summary 中解析 '提测日期' 或 '计划完成' 等时间词汇",
-
       "若【当前时间 > 提取的时间点】且【任务状态不是 Done】则标记",
-
       "优先匹配 'XX.XX 提测' 这种格式的简写"
-
     ]
-
   },
-
   {
-
     id: 'rule-risk',
-
     tagName: 'risk',
-
     icon: 'fa-triangle-exclamation',
-
     color: 'amber',
-
     description: '风险识别标准',
-
     rules: [
-
       "识别评论区中包含 '阻塞'、'暂停'、'无法复现' 等关键词",
-
       "识别多端反馈中提到的兼容性风险（如 WeChat/Web 不一致）",
-
       "识别 48 小时内无任何 Worklog 且非 Done 状态的任务"
-
     ]
-
   }
-
 ];
 
-
-
-const REDIS_BASE_URL = 'http://localhost:7379';
-
+const API_BASE_URL = 'http://127.0.0.1:8200/api';
 const REDIS_KEY_RULES = 'scrum_master_tag_rules';
 
-
-
 interface MeetingGenieProps {
-
   getAllWorkLogs: boolean;
-
   isMock: boolean;
-
   forceBatchRefresh: boolean;
-
 }
 
-
-
 const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, forceBatchRefresh }) => {
-
   const [activeSubTab, setActiveSubTab] = useState<GenieSubTab>('board');
-
   const [stories, setStories] = useState<JiraStory[]>([]);
-
     const [loading, setLoading] = useState(false);
-
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-
     const [analyzingKeys, setAnalyzingKeys] = useState<Record<string, boolean>>({});
-
     const [error, setError] = useState<string | null>(null);
-
   const [rules, setRules] = useState<TagRule[]>([]);
-
   const [selectedTagId, setSelectedTagId] = useState<string>('');
-
   const [isSaving, setIsSaving] = useState(false);
-
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-
   const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
 
-
-
   const [showModal, setShowModal] = useState(false);
-
   const [analysisResult, setAnalysisResult] = useState<{key: string, content: string, timestamp: number} | null>(null);
 
-
-
   const BOARD_CACHE_KEY = 'get_jira_board_story_v3_with_expiry';
-
   const ANALYSIS_PREFIX = 'jira_analysis_';
-
     const JIRA_BASE_URL = 'https://jira.veevadev.com/browse';
-
   
-
     const formatTime = (ts: number) => {
-
     const d = new Date(ts);
-
     const year = d.getFullYear();
-
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
-
     const day = d.getDate().toString().padStart(2, '0');
-
     const hours = d.getHours().toString().padStart(2, '0');
-
     const minutes = d.getMinutes().toString().padStart(2, '0');
-
     const seconds = d.getSeconds().toString().padStart(2, '0');
-
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
   };
-
-
 
   const loadRules = useCallback(async () => {
-
     setIsInitialLoading(true);
-
     try {
-
-      const response = await fetchWithBoardId(`${REDIS_BASE_URL}/get/${REDIS_KEY_RULES}`, {
-
+      const response = await fetchWithBoardId(`${API_BASE_URL}/rules/get`, {
         method: 'GET',
-
         mode: 'cors',
-
         headers: { 'Accept': 'application/json' }
-
       });
-
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const wrapper = await response.json();
-
-      const redisValue = wrapper.get;
-
-      if (redisValue) {
-
-        const parsedRules = typeof redisValue === 'string' ? JSON.parse(redisValue) : redisValue;
-
-        if (Array.isArray(parsedRules) && parsedRules.length > 0) {
-
-          setRules(parsedRules);
-
-          setSelectedTagId(parsedRules[0].id);
-
-          return;
-
-        }
-
+      const data = await response.json();
+      const rulesFromRedis = data.rules;
+      if (rulesFromRedis && Array.isArray(rulesFromRedis) && rulesFromRedis.length > 0) {
+        setRules(rulesFromRedis);
+        setSelectedTagId(rulesFromRedis[0].id);
+        return;
       }
-
       throw new Error('No data');
-
     } catch (err) {
-
       const local = localStorage.getItem(REDIS_KEY_RULES);
-
       if (local) {
-
         const parsed = JSON.parse(local);
-
         setRules(parsed);
-
         setSelectedTagId(parsed[0]?.id || '');
-
       } else {
-
         setRules(DEFAULT_RULES);
-
         setSelectedTagId(DEFAULT_RULES[0].id);
-
       }
-
     } finally {
-
       setIsInitialLoading(false);
-
     }
-
   }, []);
 
-
-
   const saveRulesToRedis = async () => {
-
     setIsSaving(true);
-
     try {
-
-      const rulesString = JSON.stringify(rules);
-
-      localStorage.setItem(REDIS_KEY_RULES, rulesString);
-
-      const saveUrl = `${REDIS_BASE_URL}/set/${REDIS_KEY_RULES}/${encodeURIComponent(rulesString)}`;
-
-      const response = await fetchWithBoardId(saveUrl, { method: 'GET', mode: 'cors' });
-
+      localStorage.setItem(REDIS_KEY_RULES, JSON.stringify(rules));
+      const response = await fetchWithBoardId(`${API_BASE_URL}/rules/set`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rules)
+      });
       if (!response.ok) throw new Error('Save failed');
-
       alert('配置已成功持久化至 Redis');
-
     } catch (err) {
-
       alert('同步失败，已保存至本地。');
-
     } finally {
-
       setIsSaving(false);
-
     }
-
   };
-
 
 
   useEffect(() => {
@@ -645,7 +527,7 @@ const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, for
             <div className="flex-1 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm flex flex-col animate-in fade-in duration-500">
               <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-50">
                 <div className="flex items-center gap-4"><div className={`w-12 h-12 bg-${selectedRule.color}-50 rounded-xl flex items-center justify-center text-${selectedRule.color}-600 text-xl`}><i className={`fa-solid ${selectedRule.icon}`}></i></div><div><h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{selectedRule.tagName} 判定规则</h3><p className="text-xs text-slate-400">{selectedRule.description}</p></div></div>
-                <div className="flex flex-col items-end gap-1"><span className="text-[9px] text-emerald-600 font-bold flex items-center gap-1"><i className="fa-solid fa-server"></i>Webdis Active</span><span className="text-[8px] text-slate-300 font-mono italic">/set/{REDIS_KEY_RULES}/value</span></div>
+                <div className="flex flex-col items-end gap-1"><span className="text-[9px] text-emerald-600 font-bold flex items-center gap-1"><i className="fa-solid fa-server"></i>Redis Sync Active</span><span className="text-[8px] text-slate-300 font-mono italic">/api/rules/set</span></div>
               </div>
               <div className="flex-1 space-y-4">
                 <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">判定逻辑集</label>

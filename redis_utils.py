@@ -29,7 +29,7 @@ def query_redis(method: str, key: str) -> any:
             raw_data = func(key)
 
         if raw_data is None:
-            return {}
+            return None
 
         if isinstance(raw_data, str):
             try:
@@ -60,7 +60,7 @@ async def async_query_redis(method: str, key: str) -> any:
             raw_data = await func(key)
 
         if raw_data is None:
-            return {}
+            return None
 
         if isinstance(raw_data, str):
             try:

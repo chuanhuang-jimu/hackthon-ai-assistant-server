@@ -2,13 +2,15 @@ import datetime
 import asyncio
 
 from models import ChatResponse, ChatRequest
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, Body
 from analyze_data_storage import async_parse_to_json, async_get_story_description
 from gemini_client import gemini_client
-from redis_utils import async_query_redis, async_set_redis
+from redis_utils import async_query_redis, async_set_redis, query_redis, set_redis
 import json
 
 router = APIRouter()
+
+REDIS_KEY_RULES = 'scrum_master_tag_rules'
 
 
 @router.get("/story/description")
@@ -95,6 +97,20 @@ async def personal_task_processing(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@router.get("/api/rules/get")
+def get_rules():
+    """获取同步至 Redis 的标签规则"""
+    rules = query_redis('GET', REDIS_KEY_RULES)
+    return {"success": True, "rules": rules if rules is not None else []}
+
+
+@router.post("/api/rules/set")
+def set_rules(rules: list = Body(...)):
+    """保存标签规则至 Redis"""
+    set_redis(REDIS_KEY_RULES, rules)
+    return {"success": True}
+
+
 @router.post("/api/gemini/board/story/list", response_model=ChatResponse)
 async def story_list(request: ChatRequest):
     """
@@ -104,12 +120,13 @@ async def story_list(request: ChatRequest):
     delay_rules = []
     risk_rules = []
 
-    tags_data = await async_query_redis('get', 'scrum_master_tag_rules')
-    for tag in tags_data:
-        if tag.get('tagName', '') == 'delay':
-            delay_rules += tag.get('rules', [])
-        elif tag.get('tagName', '') == 'risk':
-            risk_rules += tag.get('rules', [])
+    tags_data = query_redis('get', REDIS_KEY_RULES)
+    if isinstance(tags_data, list):
+        for tag in tags_data:
+            if tag.get('tagName', '') == 'delay':
+                delay_rules += tag.get('rules', [])
+            elif tag.get('tagName', '') == 'risk':
+                risk_rules += tag.get('rules', [])
 
     get_jira_board_story = """
     请按照以下步骤执行：
