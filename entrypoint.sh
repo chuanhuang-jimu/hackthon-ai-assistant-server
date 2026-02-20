@@ -26,6 +26,15 @@ else
   sed -i 's/"selectedAuthType": "[^"]*"/"selectedAuthType": "google-cloud-auth"/g' ~/.gemini/settings.json
 fi
 
+echo "Synchronizing latest build artifacts..."
+# 将镜像内编译好的 dist 同步到挂载的目录中 (如果目录已挂载)
+if [ -d "/app/chrome_extension" ]; then
+  # 使用临时目录中转，确保不会因为直接覆盖正在使用的目录而报错
+  mkdir -p /tmp/latest_dist
+  cp -r /app/chrome_extension/dist/. /tmp/latest_dist/
+  cp -r /tmp/latest_dist/. /app/chrome_extension/dist/
+fi
+
 echo "Environment ready. Starting Streamline API..."
 
 # 启动后端应用

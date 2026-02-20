@@ -72,6 +72,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
         <div className="p-6 space-y-6">
+          {/* Tip/Reminder */}
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-3">
+            <i className="fa-solid fa-lightbulb text-amber-500 mt-0.5"></i>
+            <p className="text-[11px] text-amber-700 leading-relaxed">
+              <b>温馨提示：</b>请确保配置您真实的 <b>Veeva 邮箱</b> 和 <b>Jira 看板 ID</b>，否则数据将使用默认配置。
+            </p>
+          </div>
+
           {/* Email Input */}
           <div>
             <div>
@@ -82,7 +90,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               type="email"
               value={emailInput}
               onChange={handleEmailChange}
-              placeholder="xxxx@veeva.com"
+              placeholder="chuan.huang@veeva.com"
               className={`w-full mt-2 px-3 py-2 text-sm border rounded-lg outline-none transition-colors ${
                 emailError
                   ? 'border-rose-500 focus:border-rose-500'
@@ -102,7 +110,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               type="text"
               value={boardIdInput}
               onChange={handleBoardIdChange}
-              placeholder="请输入Board ID"
+              placeholder="3485"
               className="w-full mt-2 px-3 py-2 text-sm border rounded-lg outline-none transition-colors border-slate-200 focus:border-indigo-500"
             />
           </div>

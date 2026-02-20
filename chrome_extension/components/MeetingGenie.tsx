@@ -46,9 +46,16 @@ interface MeetingGenieProps {
 }
 
 const MeetingGenie: React.FC<MeetingGenieProps> = ({ getAllWorkLogs, isMock, forceBatchRefresh }) => {
-  const [activeSubTab, setActiveSubTab] = useState<GenieSubTab>('board');
+  const [activeSubTab, setActiveSubTab] = useState<GenieSubTab>(() => {
+    return (localStorage.getItem('activeSubTab') as GenieSubTab) || 'board';
+  });
   const [stories, setStories] = useState<JiraStory[]>([]);
-    const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('activeSubTab', activeSubTab);
+  }, [activeSubTab]);
+
+  const [loading, setLoading] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
     const [analyzingKeys, setAnalyzingKeys] = useState<Record<string, boolean>>({});
     const [error, setError] = useState<string | null>(null);

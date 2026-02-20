@@ -8,7 +8,9 @@ import MeetingGenie from './components/MeetingGenie';
 import SettingsModal from './components/SettingsModal';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AppTab>('morning');
+  const [activeTab, setActiveTab] = useState<AppTab>(() => {
+    return (localStorage.getItem('activeTab') as AppTab) || 'morning';
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const [getAllWorkLogs, setGetAllWorkLogs] = useState(() => {
@@ -26,6 +28,10 @@ const App: React.FC = () => {
   const [boardId, setBoardId] = useState(() => {
     return localStorage.getItem('boardId') || '';
   });
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     localStorage.setItem('getAllWorkLogs', String(getAllWorkLogs));
@@ -80,7 +86,11 @@ const App: React.FC = () => {
             <MorningBrief />
           </div>
           <div style={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
-            <DailySummary getAllWorkLogs={getAllWorkLogs} isMock={isMock} userEmail={userEmail} />
+            <DailySummary 
+              getAllWorkLogs={getAllWorkLogs} 
+              isMock={isMock} 
+              userEmail={userEmail || 'chuan.huang@veeva.com'} 
+            />
           </div>
           <div style={{ display: activeTab === 'genie' ? 'block' : 'none' }}>
             <MeetingGenie getAllWorkLogs={getAllWorkLogs} isMock={isMock} forceBatchRefresh={forceBatchRefresh} />

@@ -1,6 +1,6 @@
 
 export const fetchWithBoardId = async (url: string, options?: RequestInit): Promise<Response> => {
-  const boardId = localStorage.getItem('boardId');
+  const boardId = localStorage.getItem('boardId') || '3485';
   let newUrl = url;
 
   if (boardId && newUrl.includes(':8200/')) {
