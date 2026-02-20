@@ -3,7 +3,8 @@
 // @namespace    http://tampermonkey.net/
 // @version      15.0
 // @description  Jira Story进度对比：摘要移动到标签下方，支持Markdown解析
-// @author       Gemini
+// @author       Gemini & chuan.huang@veeva.com
+// 版本记录：      https://gemini.google.com/app/5ab6d7bdff7484ef
 // @match        https://jira.veevadev.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle

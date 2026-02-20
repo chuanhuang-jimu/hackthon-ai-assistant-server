@@ -39,6 +39,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
+      - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
       # 挂载宿主机的 Gemini 配置 (保留配置信息)
       - ${HOME}/.gemini:/root/.gemini

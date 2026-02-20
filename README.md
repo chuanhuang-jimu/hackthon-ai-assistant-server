@@ -50,7 +50,10 @@
    GOOGLE_CLOUD_PROJECT=你的项目ID
    
    # Jira 配置
+   # JIRA_USERNAME 获取地址：https://jira.veevadev.com/secure/ViewProfile.jspa?selectedTab=jira.user.profile.panels:user-profile-summary-panel
    JIRA_USERNAME=你的用户名@veeva.com
+   
+   # JIRA_PERSONAL_TOKEN 获取地址：https://jira.veevadev.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens
    JIRA_PERSONAL_TOKEN=你的TOKEN
    ```
 
@@ -65,7 +68,16 @@
    - **正式插件**：插件产物位于本地 `chrome_extension/dist`。打开 Chrome `chrome://extensions/`，点击“加载已解压的扩展程序”，选择该目录即可。
    - **Redis**：映射在宿主机 `6380` 端口。
 
-### 2. 手动分步部署（不推荐）
+### 2. Jira 看板增强 (Tampermonkey 脚本)
+为了在 Jira 看板页面直接使用 AI 分析功能，你需要安装配套的油猴脚本：
+
+1. **安装插件**：在 Chrome 商店安装 [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) 扩展。
+2. **新建脚本**：点击 Tampermonkey 图标 -> “添加新脚本”。
+3. **复制代码**：将本项目根目录下的 `tampermonkey.js` 文件内容全部复制并粘贴到编辑器中。
+4. **保存生效**：按 `Ctrl+S` (或 `Cmd+S`) 保存。
+5. **使用**：刷新你的 Jira Board 页面，你会发现每个 Story 卡片上多出了一个“AI 分析”按钮，点击即可快速调用 Streamline 后端进行深度分析。
+
+### 3. 手动分步部署（不推荐）
 <details>
 <summary>展开查看分步部署细节</summary>
 
