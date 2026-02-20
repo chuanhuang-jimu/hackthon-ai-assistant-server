@@ -34,81 +34,67 @@
 
 ## 🚀 部署指南
 
-### 1. 前置要求
--   **Node.js**: v18+
--   **Python**: v3.10+
--   **Redis**: 必须安装并运行（默认端口 6379）。
--   **Gemini CLI**: 必须安装 `gemini-cli` 并在系统 PATH 中。
+### 1. Docker 快速部署 (推荐)
+通过 Docker，你可以一键完成前端编译、后端启动以及 Redis 和 Gemini CLI 的环境配置。
 
-### 2. 后端部署 (Python API)
+1. **环境准备**：
+   - 确保已安装 Docker 和 Docker Compose。
+   - **核心认证**：由于容器需要共享宿主机的身份，请先在宿主机终端执行：
+     ```bash
+     gcloud auth application-default login
+     ```
+
+2. **配置环境变量**：在项目根目录创建 `.env` 文件：
+   ```bash
+   # Google Cloud 项目 ID
+   GOOGLE_CLOUD_PROJECT=你的项目ID
+   
+   # Jira 配置
+   JIRA_USERNAME=你的用户名@veeva.com
+   JIRA_PERSONAL_TOKEN=你的TOKEN
+   ```
+
+3. **一键启动**：
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. **验证与使用**：
+   - **前端预览**：访问 `http://localhost:3000` (支持代码修改后实时预览 UI)。
+   - **后端 API**：访问 `http://localhost:8200/docs` 查看 Swagger 文档。
+   - **正式插件**：插件产物位于本地 `chrome_extension/dist`。打开 Chrome `chrome://extensions/`，点击“加载已解压的扩展程序”，选择该目录即可。
+   - **Redis**：映射在宿主机 `6380` 端口。
+
+### 2. 手动分步部署（不推荐）
+<details>
+<summary>展开查看分步部署细节</summary>
+
+#### 前置要求
+- **Node.js**: v20+ (必须，gemini-cli 的正则表达式依赖需要 v20)
+- **Python**: v3.10+
+- **Redis**: 必须安装并运行（默认端口 6379）。
+- **Gemini CLI**: 必须安装 `gemini-cli` 并在系统 PATH 中。
+
+#### 后端部署 (Python API)
 1. 安装 Python 依赖：
    ```bash
    pip install -r requirements.txt
    ```
-2启动 API 服务（默认端口 8200）：
+2. 启动 API 服务（默认端口 8200）：
    ```bash
    uvicorn main:app --port 8200 --reload
    ```
 
-### 3. 前端部署 (Chrome Extension)
-1. 进入插件目录：
+#### 前端部署 (Chrome Extension)
+1. 进入插件目录安装并构建：
    ```bash
-   cd chrome_extension
+   cd chrome_extension && npm install && npm run build
    ```
-2. 安装依赖并构建：
-   ```bash
-   npm install
-   npm run build
-   npm run dev
-   ```
-3. 加载扩展：
-   - 打开 Chrome 浏览器，访问 `chrome://extensions/`。
-   - 开启“开发者模式”。
-   - 点击“加载已解压的扩展程序”，选择 `chrome_extension/dist` 文件夹。
+2. 加载 `chrome_extension/dist` 文件夹到 Chrome。
 
-### 4. MCP 服务配置
-当前项目依赖 Jira MCP 服务，请按照以下步骤配置：
-
-1. **Jira MCP 镜像拉取**：
-   ```bash
-   docker pull ghcr.io/sooperset/mcp-atlassian:latest
-   ```
-
-2. **Gemini CLI 全局配置**：
-   编辑 `~/.gemini/settings.json`（如果没有则创建），添加或修改内容如下：
-   ```json
-   {
-     "extensions": {
-       "disabled": []
-     },
-     "mcpServers": {
-       "geminix": {
-         "httpUrl": "http://geminix.crmdev.veevasfa.com/mcp"
-       },
-       "jira": {
-         "command": "docker",
-         "args": [
-           "run",
-           "-i",
-           "--rm",
-           "-e", "JIRA_URL=https://jira.veevadev.com",
-           "-e", "JIRA_USERNAME=xxx.xxx@veeva.com",
-           "-e", "JIRA_PERSONAL_TOKEN=xxxxxx",
-           "-e", "JIRA_SSL_VERIFY=false",
-           "ghcr.io/sooperset/mcp-atlassian:latest"
-         ]
-       }
-     },
-     "selectedAuthType": "oauth-personal",
-     "vimMode": true
-   }
-   ```
-   **注意**：
-   - `JIRA_USERNAME`: 请前往 [Jira 个人资料](https://jira.veevadev.com/secure/ViewProfile.jspa?selectedTab=jira.user.profile.panels:user-profile-summary-panel) 获取。
-   - `JIRA_PERSONAL_TOKEN`: 请前往 [Jira 个人访问令牌](https://jira.veevadev.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens) 创建并获取。
-
-3. **其他 MCP 服务**：
-   - **mail**: 用于读取 Gmail 动态（详见 `mcp/mail-mcp/`）。
+#### MCP 服务配置
+确保你的 `~/.gemini/settings.json` 中配置了必要的 MCP 服务器。
+</details>
 
 ---
 
